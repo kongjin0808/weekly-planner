@@ -483,7 +483,9 @@
       }
     };
 
-    const urlParams = new URLSearchParams(window.location.search);
+    
+    const COLOR_MAP = COLOR_CLASSES;    
+const urlParams = new URLSearchParams(window.location.search);
     const isWidgetMode = urlParams.get('mode') === 'widget';
 
     window.addEventListener('DOMContentLoaded', () => {
