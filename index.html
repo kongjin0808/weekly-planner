@@ -153,7 +153,7 @@
 
       <!-- Clean Add Event Form -->
       <div id="add-event-section" class="bg-panelBg border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
-        <h3 class="text-lg font-black text-white flex items-center gap-2">
+        <h3 id="event-form-title" class="text-lg font-black text-white flex items-center gap-2">
           <span class="text-red-500">✍️</span> Add Schedule Event
         </h3>
 
@@ -200,14 +200,14 @@
             </select>
           </div>
 
-          <!-- Color -->
+          <!-- Color / Category -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Color</label>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Category</label>
             <select id="ev-color" class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
-              <option value="cyan">Sky Blue (Class)</option>
-              <option value="emerald">Emerald (Meeting)</option>
-              <option value="amber">Amber (Study)</option>
-              <option value="violet">Purple (Personal)</option>
+              <option value="class">Class (Sky Blue)</option>
+              <option value="study">Study (Amber)</option>
+              <option value="personal">Personal (Purple)</option>
+              <option value="other">Other (Emerald)</option>
             </select>
           </div>
 
@@ -233,10 +233,13 @@
             </div>
           </div>
 
-          <!-- Submit -->
-          <div class="sm:col-span-2 lg:col-span-1 flex items-end">
-            <button type="submit" class="w-full h-[48px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-wide rounded-xl shadow-lg shadow-red-900/40 transition">
+          <!-- Submit & Cancel Buttons -->
+          <div class="sm:col-span-2 lg:col-span-1 flex items-end gap-2">
+            <button type="submit" id="ev-submit-btn" class="flex-1 h-[48px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-wide rounded-xl shadow-lg shadow-red-900/40 transition">
               + Save Event
+            </button>
+            <button type="button" id="ev-cancel-btn" onclick="cancelEditEvent()" class="hidden h-[48px] px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition">
+              Cancel
             </button>
           </div>
         </form>
@@ -271,8 +274,8 @@
       </div>
 
       <!-- Add New Task Form -->
-      <div class="bg-panelBg border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-        <h3 class="text-base font-black text-white flex items-center gap-2">
+      <div id="add-task-section" class="bg-panelBg border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <h3 id="task-form-title" class="text-base font-black text-white flex items-center gap-2">
           <span class="text-red-500">📝</span> Add Task
         </h3>
 
@@ -285,9 +288,12 @@
             <input type="date" id="task-deadline" required
               class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
           </div>
-          <div class="sm:col-span-3">
-            <button type="submit" class="w-full h-[44px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase rounded-xl transition shadow-md">
+          <div class="sm:col-span-3 flex items-center gap-2">
+            <button type="submit" id="task-submit-btn" class="flex-1 h-[44px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase rounded-xl transition shadow-md">
               + Add Task
+            </button>
+            <button type="button" id="task-cancel-btn" onclick="cancelEditTask()" class="hidden h-[44px] px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition">
+              Cancel
             </button>
           </div>
         </form>
@@ -346,24 +352,48 @@
     let timetable = [];
     let tasks = [];
     let taskFilter = 'all';
+    let editingEventId = null;
+    let editingTaskId = null;
     const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzVdbPnkqt_lVUcsQtDC7khoreGevpPdoj5cX_os76fuuICpxB4K6s3GIVjtI1WiF3D/exec';
     let syncUrl = localStorage.getItem('gas_web_app_url') || DEFAULT_GAS_URL;
 
-    // Bold, vibrant event colors
+    // 4 Clean Categories: Class, Study, Personal, Other
     const COLOR_CLASSES = {
-      cyan: {
+      class: {
         bg: 'bg-sky-950/95',
         border: 'border-sky-400',
         title: 'text-white',
         sub: 'text-sky-200',
         badge: 'bg-sky-400/20 text-sky-300'
       },
-      emerald: {
+      study: {
+        bg: 'bg-amber-950/95',
+        border: 'border-amber-400',
+        title: 'text-white',
+        sub: 'text-amber-200',
+        badge: 'bg-amber-400/20 text-amber-300'
+      },
+      personal: {
+        bg: 'bg-purple-950/95',
+        border: 'border-purple-400',
+        title: 'text-white',
+        sub: 'text-purple-200',
+        badge: 'bg-purple-400/20 text-purple-300'
+      },
+      other: {
         bg: 'bg-emerald-950/95',
         border: 'border-emerald-400',
         title: 'text-white',
         sub: 'text-emerald-200',
         badge: 'bg-emerald-400/20 text-emerald-300'
+      },
+      // Backward-compatibility aliases
+      cyan: {
+        bg: 'bg-sky-950/95',
+        border: 'border-sky-400',
+        title: 'text-white',
+        sub: 'text-sky-200',
+        badge: 'bg-sky-400/20 text-sky-300'
       },
       amber: {
         bg: 'bg-amber-950/95',
@@ -378,6 +408,13 @@
         title: 'text-white',
         sub: 'text-purple-200',
         badge: 'bg-purple-400/20 text-purple-300'
+      },
+      emerald: {
+        bg: 'bg-emerald-950/95',
+        border: 'border-emerald-400',
+        title: 'text-white',
+        sub: 'text-emerald-200',
+        badge: 'bg-emerald-400/20 text-emerald-300'
       }
     };
 
@@ -547,9 +584,14 @@
               <h4 class="font-extrabold text-sm sm:text-base leading-snug tracking-tight ${colorStyle.title}">
                 ${escapeHtml(ev.title)}
               </h4>
-              <button onclick="deleteEvent('${ev.id}')" title="Delete" class="text-slate-400 hover:text-red-400 text-sm font-bold opacity-0 group-hover:opacity-100 transition p-0.5">
-                ✕
-              </button>
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
+                <button onclick="startEditEvent('${ev.id}')" title="Edit Event" class="text-slate-300 hover:text-white text-xs font-bold p-0.5">
+                  ✏️
+                </button>
+                <button onclick="deleteEvent('${ev.id}')" title="Delete" class="text-slate-400 hover:text-red-400 text-sm font-bold p-0.5">
+                  ✕
+                </button>
+              </div>
             </div>
             ${ev.location ? `<div class="text-xs font-semibold ${colorStyle.sub} mt-1.5 leading-snug">${escapeHtml(ev.location)}</div>` : ''}
           </div>
@@ -564,6 +606,48 @@
 
         overlay.appendChild(eventEl);
       });
+    }
+
+    function startEditEvent(id) {
+      const ev = timetable.find(item => item.id === id);
+      if (!ev) return;
+
+      editingEventId = id;
+      document.getElementById('ev-title').value = ev.title;
+      document.getElementById('ev-location').value = ev.location || '';
+      document.getElementById('ev-day').value = ev.day;
+
+      const startSelect = document.getElementById('ev-start');
+      startSelect.value = ev.startHour;
+      handleStartTimeChange();
+      document.getElementById('ev-end').value = ev.endHour;
+
+      let col = ev.color || 'class';
+      if (col === 'cyan') col = 'class';
+      if (col === 'amber') col = 'study';
+      if (col === 'violet') col = 'personal';
+      if (col === 'emerald') col = 'other';
+      document.getElementById('ev-color').value = col;
+
+      const rec = ev.recurrence || 'every-week';
+      const rad = document.querySelector(`input[name="ev-recurrence"][value="${rec}"]`);
+      if (rad) rad.checked = true;
+
+      document.getElementById('event-form-title').innerHTML = `<span class="text-amber-400">✏️</span> Edit Schedule Event`;
+      document.getElementById('ev-submit-btn').innerText = '✓ Update Event';
+      document.getElementById('ev-cancel-btn').classList.remove('hidden');
+
+      scrollToAddEvent();
+      document.getElementById('ev-title').focus();
+    }
+
+    function cancelEditEvent() {
+      editingEventId = null;
+      document.getElementById('ev-title').value = '';
+      document.getElementById('ev-location').value = '';
+      document.getElementById('event-form-title').innerHTML = `<span class="text-red-500">✍️</span> Add Schedule Event`;
+      document.getElementById('ev-submit-btn').innerText = '+ Save Event';
+      document.getElementById('ev-cancel-btn').classList.add('hidden');
     }
 
     function handleAddEvent(e) {
@@ -581,29 +665,43 @@
         return;
       }
 
-      const newEvent = {
-        id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        title,
-        location,
-        day,
-        startHour,
-        endHour,
-        color,
-        recurrence,
-        createdAt: new Date().toISOString()
-      };
+      if (editingEventId) {
+        const ev = timetable.find(item => item.id === editingEventId);
+        if (ev) {
+          ev.title = title;
+          ev.location = location;
+          ev.day = day;
+          ev.startHour = startHour;
+          ev.endHour = endHour;
+          ev.color = color;
+          ev.recurrence = recurrence;
+          ev.updatedAt = new Date().toISOString();
+        }
+        cancelEditEvent();
+      } else {
+        const newEvent = {
+          id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title,
+          location,
+          day,
+          startHour,
+          endHour,
+          color,
+          recurrence,
+          createdAt: new Date().toISOString()
+        };
+        timetable.push(newEvent);
+        document.getElementById('ev-title').value = '';
+        document.getElementById('ev-location').value = '';
+      }
 
-      timetable.push(newEvent);
       saveLocalData();
       renderEvents();
       syncToCloud();
 
-      document.getElementById('ev-title').value = '';
-      document.getElementById('ev-location').value = '';
-
       const btn = e.target.querySelector('button[type="submit"]');
       const original = btn.innerText;
-      btn.innerText = '✓ Added!';
+      btn.innerText = '✓ Saved!';
       setTimeout(() => btn.innerText = original, 1000);
     }
 
@@ -626,21 +724,55 @@
 
       if (!title || !deadline) return;
 
-      const newTask = {
-        id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        title,
-        deadline,
-        progressSteps: 0,
-        createdAt: new Date().toISOString()
-      };
+      if (editingTaskId) {
+        const t = tasks.find(item => item.id === editingTaskId);
+        if (t) {
+          t.title = title;
+          t.deadline = deadline;
+          t.updatedAt = new Date().toISOString();
+        }
+        cancelEditTask();
+      } else {
+        const newTask = {
+          id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title,
+          deadline,
+          progressSteps: 0,
+          createdAt: new Date().toISOString()
+        };
+        tasks.push(newTask);
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-deadline').value = '';
+      }
 
-      tasks.push(newTask);
       saveLocalData();
       renderTasks();
       syncToCloud();
+    }
 
+    function startEditTask(id) {
+      const t = tasks.find(item => item.id === id);
+      if (!t) return;
+
+      editingTaskId = id;
+      document.getElementById('task-title').value = t.title;
+      document.getElementById('task-deadline').value = t.deadline;
+
+      document.getElementById('task-form-title').innerHTML = `<span class="text-amber-400">✏️</span> Edit Task`;
+      document.getElementById('task-submit-btn').innerText = '✓ Update';
+      document.getElementById('task-cancel-btn').classList.remove('hidden');
+
+      document.getElementById('add-task-section').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('task-title').focus();
+    }
+
+    function cancelEditTask() {
+      editingTaskId = null;
       document.getElementById('task-title').value = '';
       document.getElementById('task-deadline').value = '';
+      document.getElementById('task-form-title').innerHTML = `<span class="text-red-500">📝</span> Add Task`;
+      document.getElementById('task-submit-btn').innerText = '+ Add Task';
+      document.getElementById('task-cancel-btn').classList.add('hidden');
     }
 
     function adjustTaskProgress(taskId, delta) {
@@ -670,6 +802,7 @@
     function deleteTask(id) {
       if (confirm('Delete this task?')) {
         tasks = tasks.filter(item => item.id !== id);
+        if (editingTaskId === id) cancelEditTask();
         saveLocalData();
         renderTasks();
         syncToCloud();
@@ -693,24 +826,36 @@
       const container = document.getElementById('tasks-container');
       container.innerHTML = '';
 
-      let list = [...tasks];
-      if (taskFilter === 'pending') {
-        list = list.filter(t => (t.progressSteps || 0) < 5);
-      } else if (taskFilter === 'done') {
-        list = list.filter(t => (t.progressSteps || 0) === 5);
-      }
-
-      // Update counters
+      // Separate into in-progress and completed
       const total = tasks.length;
-      const done = tasks.filter(t => (t.progressSteps || 0) === 5).length;
-      const pending = total - done;
+      const doneList = tasks.filter(t => (t.progressSteps || 0) === 5);
+      const inProgressList = tasks.filter(t => (t.progressSteps || 0) < 5);
+
+      // In-progress tasks arranged chronologically by deadline date (earliest first)
+      inProgressList.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+      // Completed tasks placed below, sorted by deadline date
+      doneList.sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
 
       document.getElementById('stat-total').innerText = total;
-      document.getElementById('stat-pending').innerText = pending;
-      document.getElementById('stat-done').innerText = done;
-      document.getElementById('badge-task-count').innerText = pending;
+      document.getElementById('stat-pending').innerText = inProgressList.length;
+      document.getElementById('stat-done').innerText = doneList.length;
+      document.getElementById('badge-task-count').innerText = inProgressList.length;
 
-      if (list.length === 0) {
+      let displayList = [];
+      let showDoneDivider = false;
+
+      if (taskFilter === 'all') {
+        displayList = [...inProgressList, ...doneList];
+        if (inProgressList.length > 0 && doneList.length > 0) {
+          showDoneDivider = true;
+        }
+      } else if (taskFilter === 'pending') {
+        displayList = inProgressList;
+      } else {
+        displayList = doneList;
+      }
+
+      if (displayList.length === 0) {
         container.innerHTML = `
           <div class="text-center py-12 text-slate-500 font-bold text-base">
             No tasks found. Add a task above!
@@ -719,9 +864,21 @@
         return;
       }
 
-      list.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+      displayList.forEach((t, idx) => {
+        // Render completed divider when switching from in-progress to done
+        if (showDoneDivider && (t.progressSteps || 0) === 5 && idx === inProgressList.length) {
+          const divider = document.createElement('div');
+          divider.className = "pt-5 pb-2 flex items-center gap-3";
+          divider.innerHTML = `
+            <span class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <span>✓ Completed Tasks</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">${doneList.length}</span>
+            </span>
+            <div class="h-px bg-slate-800 flex-1"></div>
+          `;
+          container.appendChild(divider);
+        }
 
-      list.forEach(t => {
         const steps = t.progressSteps || 0;
         const percent = steps * 20;
         const isCompleted = steps === 5;
@@ -751,8 +908,8 @@
               </h4>
             </div>
 
-            <!-- Right: 5-Step Progress Bar (+ -) -->
-            <div class="flex items-center gap-3">
+            <!-- Right: 5-Step Progress Bar (+ -) and Action Controls -->
+            <div class="flex items-center gap-2.5">
               <!-- Minus Button -->
               <button onclick="adjustTaskProgress('${t.id}', -1)" ${steps === 0 ? 'disabled' : ''}
                 class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition">
@@ -788,8 +945,13 @@
                 ${percent}%
               </span>
 
-              <!-- Delete -->
-              <button onclick="deleteTask('${t.id}')" title="Delete Task" class="text-slate-500 hover:text-red-400 ml-2 p-1 text-base font-bold">
+              <!-- Edit Task Button -->
+              <button onclick="startEditTask('${t.id}')" title="Edit Task" class="text-slate-400 hover:text-white ml-1.5 p-1 text-sm font-bold transition">
+                ✏️
+              </button>
+
+              <!-- Delete Task Button -->
+              <button onclick="deleteTask('${t.id}')" title="Delete Task" class="text-slate-500 hover:text-red-400 p-1 text-base font-bold transition">
                 ✕
               </button>
             </div>
