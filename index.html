@@ -73,7 +73,7 @@
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
 
   <!-- ================= CLEAN MINIMAL HEADER ================= -->
-  <header class="border-b border-slate-800/80 bg-panelBg/95 backdrop-blur sticky top-0 z-40">
+  <header id="main-header" class="border-b border-slate-800/80 bg-panelBg/95 backdrop-blur sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       
       <!-- App Title (Bold & Simple) -->
@@ -84,7 +84,7 @@
         </h1>
       </div>
 
-      <!-- Navigation Tabs & Cloud Sync -->
+      <!-- Navigation Tabs, Widget & Cloud Sync -->
       <div class="flex items-center space-x-2 sm:space-x-3">
         <div class="flex bg-darkBg p-1 rounded-xl border border-slate-800">
           <button id="tab-btn-timetable" onclick="switchTab('timetable')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5">
@@ -95,6 +95,12 @@
             <span id="badge-task-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-red-400 font-extrabold">0</span>
           </button>
         </div>
+
+        <!-- Floating Mini Widget Popout Button -->
+        <button onclick="openFloatingWidget()" title="Open Floating Mini Widget for Desktop" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
+          <span>📌</span>
+          <span class="hidden md:inline">Mini Widget</span>
+        </button>
 
         <!-- Export Desktop Image Button -->
         <button onclick="exportDesktopImage()" title="Save Timetable & Tasks as Desktop Image" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
@@ -113,7 +119,7 @@
   </header>
 
   <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-6">
+  <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-6">
 
     <!-- Sunday Auto-Reset Alert Banner -->
     <div id="reset-banner" class="hidden bg-amber-500/10 border-2 border-amber-500/40 rounded-xl p-4 flex items-center justify-between text-amber-200">
@@ -323,6 +329,50 @@
 
   </main>
 
+  <!-- ================= FLOATING QUICK BAR (DOCK TOGGLE) ================= -->
+  <div id="floating-quick-bar" class="fixed bottom-4 right-4 z-40 flex items-center gap-2 bg-panelBg/95 backdrop-blur border border-slate-700/80 shadow-2xl rounded-2xl p-2 px-3 transition hover:border-red-500/50">
+    <button onclick="toggleSideWidget(true)" class="flex items-center gap-2 text-left cursor-pointer">
+      <span id="quick-bar-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-xs font-bold text-white">Today & Tasks</span>
+      <span id="quick-bar-task-badge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-600 text-white font-extrabold">0</span>
+    </button>
+    <div class="h-4 w-px bg-slate-700 mx-1"></div>
+    <button onclick="openFloatingWidget()" title="Pop out floating widget window" class="text-xs px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition flex items-center gap-1">
+      <span>📌 Popout</span>
+    </button>
+  </div>
+
+  <!-- ================= SLIDE-OVER SIDE WIDGET DRAWER ================= -->
+  <div id="side-widget-backdrop" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden" onclick="toggleSideWidget(false)"></div>
+  <aside id="side-widget-drawer" class="fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[420px] bg-darkBg border-l border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-panelBg">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📅</span>
+        <div>
+          <h3 class="text-sm font-black text-white leading-tight">Planner Dock</h3>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Live Auto-Sync</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openFloatingWidget()" title="Pop out into small window" class="px-2.5 py-1 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition flex items-center gap-1">
+          <span>📌 Popout</span>
+        </button>
+        <button onclick="toggleSideWidget(false)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold">✕</button>
+      </div>
+    </div>
+    <div id="drawer-widget-body" class="flex-1 overflow-y-auto p-4 space-y-4">
+      <!-- Injected widget content -->
+    </div>
+  </aside>
+
+  <!-- ================= STANDALONE FLOATING WIDGET VIEW (?mode=widget) ================= -->
+  <div id="standalone-widget-view" class="hidden max-w-md w-full mx-auto min-h-screen p-3 sm:p-4 space-y-4">
+    <!-- Standalone Widget View Content -->
+  </div>
+
   <!-- ================= GOOGLE SHEETS SYNC MODAL ================= -->
   <div id="sync-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-panelBg border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
@@ -433,15 +483,35 @@
       }
     };
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const isWidgetMode = urlParams.get('mode') === 'widget';
+
     window.addEventListener('DOMContentLoaded', () => {
       populateHourDropdowns();
       checkSundayAutoReset();
       loadLocalData();
-      renderTimetableGrid();
-      renderEvents();
-      renderTasks();
+
+      if (isWidgetMode) {
+        const mh = document.getElementById('main-header');
+        const mc = document.getElementById('main-content');
+        const fq = document.getElementById('floating-quick-bar');
+        const sw = document.getElementById('standalone-widget-view');
+        if (mh) mh.classList.add('hidden');
+        if (mc) mc.classList.add('hidden');
+        if (fq) fq.classList.add('hidden');
+        if (sw) sw.classList.remove('hidden');
+        document.body.className = "bg-darkBg text-slate-100 min-h-screen p-3 sm:p-4 font-sans antialiased selection:bg-red-500/30 selection:text-red-200";
+        initWidgetView('standalone-widget-view');
+      } else {
+        renderTimetableGrid();
+        renderEvents();
+        renderTasks();
+        initWidgetView('drawer-widget-body');
+      }
+
       updateSyncStatusUI();
       initCloudSync();
+      startAutoSync();
     });
 
     function formatHourLabel(h) {
@@ -712,6 +782,7 @@
 
       saveLocalData();
       renderEvents();
+      renderWidgetSchedule();
       syncToCloud();
 
       const btn = e.target.querySelector('button[type="submit"]');
@@ -725,6 +796,7 @@
         timetable = timetable.filter(item => item.id !== id);
         saveLocalData();
         renderEvents();
+        renderWidgetSchedule();
         syncToCloud();
       }
     }
@@ -779,6 +851,7 @@
 
       saveLocalData();
       renderTasks();
+      renderWidgetTasks();
       syncToCloud();
     }
 
@@ -818,6 +891,7 @@
       t.progressSteps = nextStep;
       saveLocalData();
       renderTasks();
+      renderWidgetTasks();
       syncToCloud();
     }
 
@@ -828,6 +902,7 @@
       t.progressSteps = step;
       saveLocalData();
       renderTasks();
+      renderWidgetTasks();
       syncToCloud();
     }
 
@@ -837,6 +912,7 @@
         if (editingTaskId === id) cancelEditTask();
         saveLocalData();
         renderTasks();
+        renderWidgetTasks();
         syncToCloud();
       }
     }
@@ -856,7 +932,6 @@
 
     function renderTasks() {
       const container = document.getElementById('tasks-container');
-      container.innerHTML = '';
 
       // Separate into in-progress and completed
       const total = tasks.length;
@@ -864,14 +939,22 @@
       const inProgressList = tasks.filter(t => (t.progressSteps || 0) < 5);
 
       // In-progress tasks arranged chronologically by deadline date (earliest first)
-      inProgressList.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+      inProgressList.sort((a, b) => new Date(formatDeadlineString(a.deadline)) - new Date(formatDeadlineString(b.deadline)));
       // Completed tasks placed below, sorted by deadline date
-      doneList.sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
+      doneList.sort((a, b) => new Date(formatDeadlineString(b.deadline)) - new Date(formatDeadlineString(a.deadline)));
 
-      document.getElementById('stat-total').innerText = total;
-      document.getElementById('stat-pending').innerText = inProgressList.length;
-      document.getElementById('stat-done').innerText = doneList.length;
-      document.getElementById('badge-task-count').innerText = inProgressList.length;
+      const totalEl = document.getElementById('stat-total');
+      if (totalEl) totalEl.innerText = total;
+      const pendEl = document.getElementById('stat-pending');
+      if (pendEl) pendEl.innerText = inProgressList.length;
+      const doneEl = document.getElementById('stat-done');
+      if (doneEl) doneEl.innerText = doneList.length;
+      const badgeEl = document.getElementById('badge-task-count');
+      if (badgeEl) badgeEl.innerText = inProgressList.length;
+      updateQuickBarBadges();
+
+      if (!container) return;
+      container.innerHTML = '';
 
       let displayList = [];
       let showDoneDivider = false;
@@ -1120,7 +1203,7 @@
       if (!syncUrl) return;
       setSyncStatus('syncing');
       try {
-        const res = await fetch(`${syncUrl}?action=getData`);
+        const res = await fetch(`${syncUrl}?action=getData&_ts=${Date.now()}`);
         const data = await res.json();
         if (data && ((data.timetable && data.timetable.length > 0) || (data.tasks && data.tasks.length > 0))) {
           timetable = data.timetable || [];
@@ -1131,6 +1214,9 @@
           saveLocalData();
           renderEvents();
           renderTasks();
+          renderWidgetSchedule();
+          renderWidgetTasks();
+          updateQuickBarBadges();
           setSyncStatus('synced');
         } else {
           await syncToCloud();
@@ -1156,9 +1242,98 @@
           })
         });
         setSyncStatus('synced');
+        updateQuickBarBadges();
       } catch (err) {
         console.error('Sync error:', err);
         setSyncStatus('error');
+      }
+    }
+
+    let isSilentSyncing = false;
+    async function syncFromCloudSilent(force = false) {
+      if (!syncUrl || isSilentSyncing) return;
+
+      // Do not sync in background if user is actively editing or typing in a field
+      if (!force) {
+        if (editingEventId || editingTaskId) return;
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
+          return;
+        }
+      }
+
+      isSilentSyncing = true;
+      try {
+        const res = await fetch(`${syncUrl}?action=getData&_ts=${Date.now()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && ((Array.isArray(data.timetable) && data.timetable.length > 0) || (Array.isArray(data.tasks) && data.tasks.length > 0))) {
+          const incomingTimetable = data.timetable || [];
+          const incomingTasks = data.tasks || [];
+          incomingTasks.forEach(t => {
+            t.deadline = formatDeadlineString(t.deadline);
+          });
+          tasks.forEach(t => {
+            t.deadline = formatDeadlineString(t.deadline);
+          });
+
+          const localSnap = JSON.stringify({ t: timetable, k: tasks });
+          const incomingSnap = JSON.stringify({ t: incomingTimetable, k: incomingTasks });
+
+          if (localSnap !== incomingSnap) {
+            console.log('[AutoSync] Cloud data updated from another device! Applying...');
+            timetable = incomingTimetable;
+            tasks = incomingTasks;
+            saveLocalData();
+            renderEvents();
+            renderTasks();
+            renderWidgetSchedule();
+            renderWidgetTasks();
+            updateQuickBarBadges();
+            flashSyncIndicator('Auto-Synced (Just now)');
+          } else {
+            setSyncStatus('synced');
+          }
+        }
+      } catch (err) {
+        console.warn('[AutoSync] Silent sync skipped:', err);
+      } finally {
+        isSilentSyncing = false;
+      }
+    }
+
+    function startAutoSync() {
+      // 1. Silent periodic background poll every 15 seconds
+      setInterval(() => {
+        syncFromCloudSilent();
+      }, 15000);
+
+      // 2. Immediate poll whenever user focuses window or browser tab
+      window.addEventListener('focus', () => {
+        syncFromCloudSilent();
+      });
+
+      // 3. Immediate poll when page becomes visible (phone screen unlocked or switched back)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          syncFromCloudSilent();
+        }
+      });
+
+      // 4. Poll when device comes back online
+      window.addEventListener('online', () => {
+        syncFromCloudSilent();
+      });
+    }
+
+    function flashSyncIndicator(customMsg) {
+      setSyncStatus('synced', customMsg || 'Auto-Synced');
+      const quickDot = document.getElementById('quick-bar-dot');
+      if (quickDot) {
+        quickDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+        setTimeout(() => {
+          quickDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+        }, 1200);
       }
     }
 
@@ -1170,7 +1345,7 @@
 
       setSyncStatus('syncing');
       try {
-        const res = await fetch(`${syncUrl}?action=getData`);
+        const res = await fetch(`${syncUrl}?action=getData&_ts=${Date.now()}`);
         const data = await res.json();
         if (data && data.timetable && data.tasks) {
           timetable = data.timetable;
@@ -1181,6 +1356,9 @@
           saveLocalData();
           renderEvents();
           renderTasks();
+          renderWidgetSchedule();
+          renderWidgetTasks();
+          updateQuickBarBadges();
           setSyncStatus('synced');
           alert('Successfully loaded data from Google Sheet!');
           closeSyncModal();
@@ -1191,19 +1369,30 @@
       }
     }
 
-    function setSyncStatus(state) {
+    function setSyncStatus(state, customText) {
       const dot = document.getElementById('sync-status-dot');
       const text = document.getElementById('sync-status-text');
+      const widgetDot = document.getElementById('widget-sync-dot');
+      const widgetText = document.getElementById('widget-sync-text');
+      const quickDot = document.getElementById('quick-bar-dot');
 
       if (state === 'synced') {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-        text.innerText = syncUrl ? 'Cloud Synced' : 'Local Mode';
+        const displayText = customText || (syncUrl ? 'Cloud Synced' : 'Local Mode');
+        if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        if (text) text.innerText = displayText;
+        if (widgetDot) widgetDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (widgetText) widgetText.innerText = displayText;
+        if (quickDot) quickDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
       } else if (state === 'syncing') {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-        text.innerText = 'Syncing...';
+        if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        if (text) text.innerText = 'Syncing...';
+        if (widgetDot) widgetDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        if (widgetText) widgetText.innerText = 'Syncing...';
       } else if (state === 'error') {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-400';
-        text.innerText = 'Sync Error';
+        if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-red-400';
+        if (text) text.innerText = 'Sync Error';
+        if (widgetDot) widgetDot.className = 'w-2 h-2 rounded-full bg-red-400';
+        if (widgetText) widgetText.innerText = 'Sync Error';
       }
     }
 
@@ -1462,6 +1651,411 @@
         truncated = truncated.slice(0, -1);
       }
       return truncated + '…';
+    }
+
+    // ========================================================
+    // FLOATING MINI WIDGET & QUICK DOCK LOGIC
+    // ========================================================
+    let widgetSelectedDay = new Date().getDay(); // 0 = Sun, 1 = Mon ...
+    let widgetFilterMode = 'both';               // 'both', 'plan', 'tasks'
+
+    function updateQuickBarBadges() {
+      const inProgress = tasks.filter(t => (t.progressSteps || 0) < 5);
+      const total = inProgress.length;
+      const b1 = document.getElementById('badge-task-count');
+      const b2 = document.getElementById('quick-bar-task-badge');
+      const b3 = document.getElementById('widget-tasks-badge');
+      const b4 = document.getElementById('widget-pending-count');
+      if (b1) b1.innerText = total;
+      if (b2) b2.innerText = total;
+      if (b3) b3.innerText = total;
+      if (b4) b4.innerText = total;
+    }
+
+    function openFloatingWidget() {
+      const w = 400;
+      const h = 740;
+      const left = Math.max(0, (window.screen.availWidth || window.innerWidth) - w - 25);
+      const top = 50;
+      const url = window.location.origin + window.location.pathname + '?mode=widget';
+      window.open(url, 'WeeklyPlannerWidget', `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`);
+    }
+
+    function toggleSideWidget(open) {
+      const drawer = document.getElementById('side-widget-drawer');
+      const backdrop = document.getElementById('side-widget-backdrop');
+      if (!drawer || !backdrop) return;
+
+      const shouldOpen = open !== undefined ? open : drawer.classList.contains('translate-x-full');
+      if (shouldOpen) {
+        drawer.classList.remove('translate-x-full');
+        backdrop.classList.remove('hidden');
+        renderWidgetSchedule();
+        renderWidgetTasks();
+      } else {
+        drawer.classList.add('translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    function getWidgetComponentHtml() {
+      return `
+        <div class="space-y-3.5 select-none">
+          <!-- Widget Top Header (Only in standalone popup mode) -->
+          <div id="widget-standalone-header" class="flex items-center justify-between pb-2 border-b border-slate-800 ${isWidgetMode ? '' : 'hidden'}">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">📅</span>
+              <div>
+                <h2 class="text-base font-black text-white uppercase tracking-tight">Planner Mini</h2>
+                <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <span id="widget-sync-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span id="widget-sync-text">Auto-Sync Active</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="syncFromCloudSilent(true)" title="Force Sync Now" class="p-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center gap-1">
+                <span>🔄</span>
+              </button>
+              <a href="./" target="_blank" title="Open Full Weekly Planner" class="text-xs px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-md shadow-red-900/30">
+                <span>Full App ↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Day Navigation Bar -->
+          <div class="bg-panelBg border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-lg">
+            <div class="flex items-center justify-between">
+              <button onclick="navigateWidgetDay(-1)" class="w-8 h-8 rounded-xl bg-darkBg hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center text-sm transition">
+                ‹
+              </button>
+              <div class="text-center flex items-center justify-center gap-2">
+                <span id="widget-day-title" class="text-sm font-black text-white">Wednesday</span>
+                <button onclick="setWidgetDayToToday()" id="widget-btn-today" class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 font-bold hover:bg-red-500/30 transition">
+                  Today
+                </button>
+              </div>
+              <button onclick="navigateWidgetDay(1)" class="w-8 h-8 rounded-xl bg-darkBg hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center text-sm transition">
+                ›
+              </button>
+            </div>
+
+            <!-- 7 Day Quick Selector Buttons -->
+            <div class="grid grid-cols-7 gap-1" id="widget-day-pills">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Segment Filter Toggle: [Both] [Plan] [Tasks] -->
+          <div class="flex bg-panelBg p-1 rounded-xl border border-slate-800 text-xs font-bold shadow-md">
+            <button id="widget-tab-both" onclick="setWidgetFilter('both')" class="flex-1 py-1.5 rounded-lg transition text-white bg-red-600">Both</button>
+            <button id="widget-tab-plan" onclick="setWidgetFilter('plan')" class="flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white">Plan</button>
+            <button id="widget-tab-tasks" onclick="setWidgetFilter('tasks')" class="flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white">Tasks (<span id="widget-tasks-badge">0</span>)</button>
+          </div>
+
+          <!-- Section 1: Today's Plan (Timetable) -->
+          <div id="widget-section-plan" class="space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>⏱️ Today's Plan</span>
+                <span id="widget-plan-count" class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold">0</span>
+              </span>
+              <span id="widget-plan-day-name" class="text-xs text-red-400 font-bold"></span>
+            </div>
+            <div id="widget-plan-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Section 2: Task List & Quick Add -->
+          <div id="widget-section-tasks" class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>📝 Quick Tasks</span>
+                <span id="widget-pending-count" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold">0</span>
+              </span>
+            </div>
+
+            <!-- Quick Inline Add Task -->
+            <form onsubmit="handleWidgetQuickAddTask(event)" class="flex gap-1.5">
+              <input type="text" id="widget-quick-task-title" placeholder="+ Quick task... (Enter to add)" required
+                class="flex-1 bg-panelBg border border-slate-800 focus:border-red-500 rounded-xl px-3 py-2 text-xs font-medium text-white placeholder-slate-500 focus:outline-none transition">
+              <button type="submit" class="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition shrink-0 shadow-md shadow-red-900/30">
+                Add
+              </button>
+            </form>
+
+            <div id="widget-tasks-list" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function initWidgetView(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = getWidgetComponentHtml();
+      renderWidgetSchedule();
+      renderWidgetTasks();
+    }
+
+    function navigateWidgetDay(delta) {
+      widgetSelectedDay = (widgetSelectedDay + delta + 7) % 7;
+      renderWidgetSchedule();
+    }
+
+    function setWidgetDay(idx) {
+      widgetSelectedDay = idx;
+      renderWidgetSchedule();
+    }
+
+    function setWidgetDayToToday() {
+      widgetSelectedDay = new Date().getDay();
+      renderWidgetSchedule();
+    }
+
+    function setWidgetFilter(mode) {
+      widgetFilterMode = mode;
+      const secPlan = document.getElementById('widget-section-plan');
+      const secTasks = document.getElementById('widget-section-tasks');
+      const tabBoth = document.getElementById('widget-tab-both');
+      const tabPlan = document.getElementById('widget-tab-plan');
+      const tabTasks = document.getElementById('widget-tab-tasks');
+
+      const activeCls = 'flex-1 py-1.5 rounded-lg transition text-white bg-red-600';
+      const inactiveCls = 'flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white';
+
+      if (tabBoth) tabBoth.className = mode === 'both' ? activeCls : inactiveCls;
+      if (tabPlan) tabPlan.className = mode === 'plan' ? activeCls : inactiveCls;
+      if (tabTasks) tabTasks.className = mode === 'tasks' ? activeCls : inactiveCls;
+
+      if (secPlan) {
+        if (mode === 'tasks') secPlan.classList.add('hidden');
+        else secPlan.classList.remove('hidden');
+      }
+      if (secTasks) {
+        if (mode === 'plan') secTasks.classList.add('hidden');
+        else secTasks.classList.remove('hidden');
+      }
+    }
+
+    function renderWidgetSchedule() {
+      const dayKey = DAYS[widgetSelectedDay];
+      const todayIdx = new Date().getDay();
+      const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+      const titleEl = document.getElementById('widget-day-title');
+      if (titleEl) {
+        titleEl.innerText = `${dayNamesFull[widgetSelectedDay]}`;
+      }
+      const btnToday = document.getElementById('widget-btn-today');
+      if (btnToday) {
+        if (widgetSelectedDay === todayIdx) {
+          btnToday.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-500 text-white font-black shadow-sm';
+        } else {
+          btnToday.className = 'text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold';
+        }
+      }
+
+      const pillsContainer = document.getElementById('widget-day-pills');
+      if (pillsContainer) {
+        let pillsHtml = '';
+        DAYS.forEach((d, idx) => {
+          const isSelected = idx === widgetSelectedDay;
+          const isToday = idx === todayIdx;
+          let btnCls = isSelected
+            ? 'bg-red-600 text-white font-black shadow-sm'
+            : (isToday ? 'bg-slate-800 text-red-400 font-extrabold border border-red-500/40' : 'bg-darkBg hover:bg-slate-800 text-slate-400 hover:text-white font-semibold border border-slate-800');
+          pillsHtml += `<button type="button" onclick="setWidgetDay(${idx})" class="py-1.5 rounded-lg text-xs transition ${btnCls}">${d}</button>`;
+        });
+        pillsContainer.innerHTML = pillsHtml;
+      }
+
+      const dayEvents = timetable.filter(ev => ev.day === dayKey);
+      dayEvents.sort((a, b) => a.startHour - b.startHour);
+
+      const countBadge = document.getElementById('widget-plan-count');
+      if (countBadge) countBadge.innerText = dayEvents.length;
+
+      const planDayName = document.getElementById('widget-plan-day-name');
+      if (planDayName) planDayName.innerText = dayKey;
+
+      const listContainer = document.getElementById('widget-plan-list');
+      if (!listContainer) return;
+
+      if (dayEvents.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-6 px-4 bg-panelBg/60 border border-slate-800 rounded-2xl text-slate-400 text-xs font-medium space-y-1">
+            <span class="text-lg">☀️</span>
+            <div class="font-bold text-slate-300">No scheduled events for ${dayKey}</div>
+            <div class="text-[11px] text-slate-500">Free time or self-study!</div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      dayEvents.forEach(ev => {
+        let col = ev.color || 'class';
+        const colorStyle = COLOR_MAP[col] || COLOR_MAP.class;
+        let catLabel = 'Class';
+        if (col === 'study' || col === 'amber') catLabel = 'Study';
+        else if (col === 'personal' || col === 'violet') catLabel = 'Personal';
+        else if (col === 'other' || col === 'emerald') catLabel = 'Other';
+
+        html += `
+          <div class="p-3 rounded-2xl border ${colorStyle.border} ${colorStyle.bg} shadow-md space-y-1.5 transition hover:scale-[1.01]">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-black font-mono px-2 py-0.5 rounded-lg bg-black/50 text-white border border-white/10 shrink-0">
+                ${formatHourLabel(ev.startHour)} – ${formatHourLabel(ev.endHour)}
+              </span>
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${colorStyle.badge} shrink-0">
+                  ${catLabel}
+                </span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${ev.recurrence === 'every-week' ? 'bg-sky-500/20 text-sky-300' : 'bg-amber-500/20 text-amber-300'}">
+                  ${ev.recurrence === 'every-week' ? 'Weekly' : 'This Wk'}
+                </span>
+              </div>
+            </div>
+            <div class="text-sm font-black text-white leading-snug">${escapeHtml(ev.title)}</div>
+            ${ev.location ? `<div class="text-xs font-semibold ${colorStyle.sub} flex items-center gap-1">📍 ${escapeHtml(ev.location)}</div>` : ''}
+          </div>
+        `;
+      });
+      listContainer.innerHTML = html;
+    }
+
+    function renderWidgetTasks() {
+      const container = document.getElementById('widget-tasks-list');
+      if (!container) return;
+
+      const inProgressList = tasks.filter(t => (t.progressSteps || 0) < 5);
+      const doneList = tasks.filter(t => (t.progressSteps || 0) === 5);
+
+      inProgressList.sort((a, b) => new Date(formatDeadlineString(a.deadline)) - new Date(formatDeadlineString(b.deadline)));
+      doneList.sort((a, b) => new Date(formatDeadlineString(b.deadline)) - new Date(formatDeadlineString(a.deadline)));
+
+      updateQuickBarBadges();
+
+      if (tasks.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-slate-500 font-bold text-xs bg-panelBg/60 border border-slate-800 rounded-2xl">
+            No tasks yet. Add one above!
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      inProgressList.forEach(t => {
+        html += getWidgetTaskCardHtml(t, false);
+      });
+
+      if (doneList.length > 0) {
+        html += `
+          <div class="pt-2 pb-1">
+            <details class="group">
+              <summary class="text-xs font-black uppercase tracking-wider text-emerald-400 cursor-pointer flex items-center justify-between py-1 px-1 select-none">
+                <span class="flex items-center gap-1.5">
+                  <span>✓ Completed Tasks</span>
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px]">${doneList.length}</span>
+                </span>
+                <span class="text-[10px] text-slate-500 group-open:rotate-180 transition">▼</span>
+              </summary>
+              <div class="space-y-2 mt-2">
+                ${doneList.map(t => getWidgetTaskCardHtml(t, true)).join('')}
+              </div>
+            </details>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function getWidgetTaskCardHtml(t, isDone) {
+      const steps = t.progressSteps || 0;
+      const percent = steps * 20;
+      const cleanDeadline = formatDeadlineString(t.deadline);
+      const today = new Date().toISOString().split('T')[0];
+
+      let deadlineBadge = `<span class="text-[10px] px-2 py-0.5 rounded-lg bg-darkBg text-slate-300 font-bold font-mono border border-slate-700/60">📅 ${cleanDeadline}</span>`;
+      if (cleanDeadline && cleanDeadline < today && !isDone) {
+        deadlineBadge = `<span class="text-[10px] px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 font-bold font-mono">⚠️ Overdue: ${cleanDeadline}</span>`;
+      } else if (cleanDeadline && cleanDeadline === today && !isDone) {
+        deadlineBadge = `<span class="text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold font-mono">⚡ Today</span>`;
+      }
+
+      let segments = '';
+      for (let b = 1; b <= 5; b++) {
+        const filled = b <= steps;
+        const fillCls = filled ? (steps === 5 ? 'bg-emerald-400' : 'bg-red-500') : 'bg-darkBg hover:bg-slate-700 border border-slate-800';
+        segments += `<button type="button" onclick="setTaskProgressDirect('${t.id}', ${b})" title="Set ${b * 20}%" class="h-2 rounded transition ${fillCls}"></button>`;
+      }
+
+      return `
+        <div class="p-3 rounded-2xl border ${isDone ? 'bg-panelBg/50 border-emerald-900/40 opacity-75' : 'bg-panelBg border-slate-800 hover:border-slate-700'} space-y-2 shadow-sm transition">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${deadlineBadge}
+                ${isDone ? '<span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-bold">✓ Done</span>' : ''}
+              </div>
+              <div class="text-xs font-bold text-white leading-tight ${isDone ? 'line-through text-slate-400' : ''}">
+                ${escapeHtml(t.title)}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="adjustTaskProgress('${t.id}', -1)" title="Decrease 20%" class="w-6 h-6 rounded-lg bg-darkBg hover:bg-slate-700 border border-slate-700 text-slate-200 font-extrabold flex items-center justify-center text-xs transition">
+                −
+              </button>
+              <button onclick="adjustTaskProgress('${t.id}', 1)" title="Increase 20%" class="w-6 h-6 rounded-lg bg-darkBg hover:bg-slate-700 border border-slate-700 text-slate-200 font-extrabold flex items-center justify-center text-xs transition">
+                +
+              </button>
+              <button onclick="deleteTask('${t.id}')" title="Delete Task" class="w-6 h-6 rounded-lg bg-darkBg hover:bg-red-900/40 border border-slate-700 text-slate-400 hover:text-red-400 font-bold flex items-center justify-center text-xs transition ml-0.5">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <div class="grid grid-cols-5 gap-1 flex-1">
+              ${segments}
+            </div>
+            <span class="text-[11px] font-mono font-black ${steps === 5 ? 'text-emerald-400' : 'text-slate-300'} w-9 text-right shrink-0">
+              ${percent}%
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleWidgetQuickAddTask(e) {
+      e.preventDefault();
+      const input = document.getElementById('widget-quick-task-title');
+      if (!input) return;
+      const title = input.value.trim();
+      if (!title) return;
+
+      const deadline = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+      const newTask = {
+        id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title,
+        deadline,
+        progressSteps: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      tasks.push(newTask);
+      input.value = '';
+      saveLocalData();
+      renderTasks();
+      renderWidgetTasks();
+      syncToCloud();
     }
   </script>
 </body>
