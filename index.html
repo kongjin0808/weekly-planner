@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Weekly Planner</title>
+  <!-- Google Fonts & Tailwind CSS CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            darkBg: '#090d16',
+            panelBg: '#0f172a',
+            cellBorder: 'rgba(239, 68, 68, 0.75)',
+            cellBorderBold: '#ef4444',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    /* Timetable Grid Borders */
+    .grid-container {
+      border: 2.5px solid #ef4444;
+    }
+    .grid-cell {
+      border-right: 1.5px solid rgba(239, 68, 68, 0.65);
+      border-bottom: 1.5px solid rgba(239, 68, 68, 0.65);
+      transition: background-color 0.15s ease;
+    }
+    .grid-cell:hover {
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+    .grid-header-col {
+      border-right: 1.5px solid rgba(239, 68, 68, 0.65);
+      border-bottom: 2.5px solid #ef4444;
+    }
+    .grid-time-label {
+      border-right: 2.5px solid #ef4444;
+      border-bottom: 1.5px solid rgba(239, 68, 68, 0.65);
+    }
+  </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
+
+  <!-- ================= CLEAN MINIMAL HEADER ================= -->
+  <header class="border-b border-slate-800/80 bg-panelBg/95 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- App Title (Bold & Simple) -->
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">📅</span>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
+          Weekly Planner
+        </h1>
+      </div>
+
+      <!-- Navigation Tabs & Cloud Sync -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="flex bg-darkBg p-1 rounded-xl border border-slate-800">
+          <button id="tab-btn-timetable" onclick="switchTab('timetable')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5">
+            <span>Timetable</span>
+          </button>
+          <button id="tab-btn-tasks" onclick="switchTab('tasks')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white flex items-center gap-1.5">
+            <span>Tasks</span>
+            <span id="badge-task-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-red-400 font-extrabold">0</span>
+          </button>
+        </div>
+
+        <!-- Sync Pill -->
+        <button onclick="openSyncModal()" title="Google Sheets Sync" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-semibold transition">
+          <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          <span class="hidden sm:inline" id="sync-status-text">Cloud Sync</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-6">
+
+    <!-- Sunday Auto-Reset Alert Banner -->
+    <div id="reset-banner" class="hidden bg-amber-500/10 border-2 border-amber-500/40 rounded-xl p-4 flex items-center justify-between text-amber-200">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">🔄</span>
+        <span class="text-sm font-semibold">Sunday Reset: "This week only" items were archived. Your permanent weekly classes remain intact!</span>
+      </div>
+      <button onclick="dismissBanner()" class="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1.5 rounded-lg">Dismiss</button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PAGE 1: WEEKLY TIMETABLE                                 -->
+    <!-- ======================================================== -->
+    <section id="page-timetable" class="space-y-6">
+
+      <!-- Timetable Action Bar -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-tight">Timetable</h2>
+          <p class="text-xs text-slate-400 font-medium">Click any time box to add an event</p>
+        </div>
+        <button onclick="scrollToAddEvent()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-900/30 transition flex items-center gap-1.5">
+          <span>+ Add Event</span>
+        </button>
+      </div>
+
+      <!-- Grid Container -->
+      <div class="overflow-x-auto rounded-2xl shadow-2xl bg-darkBg grid-container">
+        <div class="min-w-[850px] select-none">
+          
+          <!-- Days Header (Big & Bold) -->
+          <div class="grid grid-cols-[80px_repeat(7,1fr)] bg-slate-900 text-center">
+            <div class="p-3.5 text-xs font-black text-slate-400 uppercase tracking-wider border-r-2 border-b-2 border-red-500 bg-darkBg flex items-center justify-center">
+              Time
+            </div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Sun</div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Mon</div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Tue</div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Wed</div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Thu</div>
+            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Fri</div>
+            <div class="p-3.5 grid-header-col border-r-0 text-lg font-black text-red-400">Sat</div>
+          </div>
+
+          <!-- 17 Hours Rows (7 AM to 12 AM) -->
+          <div id="timetable-body" class="relative">
+            <!-- Dynamically populated by JS -->
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Clean Add Event Form -->
+      <div id="add-event-section" class="bg-panelBg border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span class="text-red-500">✍️</span> Add Schedule Event
+        </h3>
+
+        <form id="event-form" onsubmit="handleAddEvent(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Title -->
+          <div class="space-y-1.5 sm:col-span-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Event Title *</label>
+            <input type="text" id="ev-title" required placeholder="e.g. Data Analytics / Meet Advisor"
+              class="w-full bg-darkBg border border-slate-700 rounded-xl px-4 py-2.5 text-base font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition">
+          </div>
+
+          <!-- Location -->
+          <div class="space-y-1.5 sm:col-span-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Location / Room / Details</label>
+            <input type="text" id="ev-location" placeholder="e.g. KQK 7002, 2.UG, DK5 or Library"
+              class="w-full bg-darkBg border border-slate-700 rounded-xl px-4 py-2.5 text-base font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition">
+          </div>
+
+          <!-- Day -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Day *</label>
+            <select id="ev-day" required class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
+              <option value="Sun">Sunday</option>
+              <option value="Mon">Monday</option>
+              <option value="Tue">Tuesday</option>
+              <option value="Wed">Wednesday</option>
+              <option value="Thu">Thursday</option>
+              <option value="Fri">Friday</option>
+              <option value="Sat">Saturday</option>
+            </select>
+          </div>
+
+          <!-- Start Hour -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Start Time *</label>
+            <select id="ev-start" required onchange="handleStartTimeChange()" class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
+            </select>
+          </div>
+
+          <!-- End Hour -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">End Time *</label>
+            <select id="ev-end" required class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
+            </select>
+          </div>
+
+          <!-- Color -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Color</label>
+            <select id="ev-color" class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
+              <option value="cyan">Sky Blue (Class)</option>
+              <option value="emerald">Emerald (Meeting)</option>
+              <option value="amber">Amber (Study)</option>
+              <option value="violet">Purple (Personal)</option>
+            </select>
+          </div>
+
+          <!-- Recurrence -->
+          <div class="sm:col-span-2 lg:col-span-3">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">Recurrence *</label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-darkBg cursor-pointer hover:border-red-500 transition">
+                <input type="radio" name="ev-recurrence" value="every-week" checked class="w-4 h-4 text-red-600 focus:ring-red-500">
+                <div>
+                  <span class="text-sm font-bold text-white block">🔄 Every Week</span>
+                  <span class="text-xs text-slate-400">Fixed recurring timetable</span>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-darkBg cursor-pointer hover:border-red-500 transition">
+                <input type="radio" name="ev-recurrence" value="this-week" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                <div>
+                  <span class="text-sm font-bold text-white block">📅 This Week Only</span>
+                  <span class="text-xs text-slate-400">Resets every Sunday</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="sm:col-span-2 lg:col-span-1 flex items-end">
+            <button type="submit" class="w-full h-[48px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-wide rounded-xl shadow-lg shadow-red-900/40 transition">
+              + Save Event
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PAGE 2: TASK LIST (WITH 5-STEP PROGRESS BAR)             -->
+    <!-- ======================================================== -->
+    <section id="page-tasks" class="hidden space-y-6">
+
+      <!-- Task Top Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-panelBg p-4 sm:p-5 rounded-2xl border border-slate-800">
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-tight">Task Manager</h2>
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-400 mt-1">
+            <span>Total: <strong id="stat-total" class="text-white">0</strong></span>
+            <span>•</span>
+            <span>Pending: <strong id="stat-pending" class="text-amber-400">0</strong></span>
+            <span>•</span>
+            <span>Completed: <strong id="stat-done" class="text-emerald-400">0</strong></span>
+          </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex bg-darkBg p-1 rounded-xl border border-slate-800 text-xs font-bold">
+          <button onclick="filterTasks('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white">All</button>
+          <button onclick="filterTasks('pending')" id="filter-btn-pending" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">In Progress</button>
+          <button onclick="filterTasks('done')" id="filter-btn-done" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Completed</button>
+        </div>
+      </div>
+
+      <!-- Add New Task Form -->
+      <div class="bg-panelBg border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <h3 class="text-base font-black text-white flex items-center gap-2">
+          <span class="text-red-500">📝</span> Add Task
+        </h3>
+
+        <form id="task-form" onsubmit="handleAddTask(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div class="sm:col-span-6">
+            <input type="text" id="task-title" required placeholder="Task title (e.g. Chapter 4 Assignment, Report slides)"
+              class="w-full bg-darkBg border border-slate-700 rounded-xl px-4 py-2.5 text-base font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+          </div>
+          <div class="sm:col-span-3">
+            <input type="date" id="task-deadline" required
+              class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-red-500">
+          </div>
+          <div class="sm:col-span-3">
+            <button type="submit" class="w-full h-[44px] bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase rounded-xl transition shadow-md">
+              + Add Task
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Task Items List -->
+      <div id="tasks-container" class="space-y-3">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= GOOGLE SHEETS SYNC MODAL ================= -->
+  <div id="sync-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-panelBg border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>⚙️</span> Google Sheets Sync
+        </h3>
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+      </div>
+
+      <div class="space-y-4 text-sm text-slate-300">
+        <p class="text-xs text-slate-400">
+          Paste your Google Apps Script Web App URL to sync all your timetable events and tasks automatically.
+        </p>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Web App URL</label>
+          <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full bg-darkBg border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-red-500">
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <button onclick="testAndSaveSyncUrl()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-xl transition">
+            Save & Sync Now
+          </button>
+          <button onclick="loadFromCloud()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold rounded-xl transition">
+            Pull from Cloud
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= APPLICATION JAVASCRIPT ================= -->
+  <script>
+    const START_HOUR = 7;   // 7 AM
+    const END_HOUR = 24;    // 12 AM (Midnight)
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const HOUR_HEIGHT = 68; // pixels per hour row
+
+    let timetable = [];
+    let tasks = [];
+    let taskFilter = 'all';
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzVdbPnkqt_lVUcsQtDC7khoreGevpPdoj5cX_os76fuuICpxB4K6s3GIVjtI1WiF3D/exec';
+    let syncUrl = localStorage.getItem('gas_web_app_url') || DEFAULT_GAS_URL;
+
+    // Bold, vibrant event colors
+    const COLOR_CLASSES = {
+      cyan: {
+        bg: 'bg-sky-950/95',
+        border: 'border-sky-400',
+        title: 'text-white',
+        sub: 'text-sky-200',
+        badge: 'bg-sky-400/20 text-sky-300'
+      },
+      emerald: {
+        bg: 'bg-emerald-950/95',
+        border: 'border-emerald-400',
+        title: 'text-white',
+        sub: 'text-emerald-200',
+        badge: 'bg-emerald-400/20 text-emerald-300'
+      },
+      amber: {
+        bg: 'bg-amber-950/95',
+        border: 'border-amber-400',
+        title: 'text-white',
+        sub: 'text-amber-200',
+        badge: 'bg-amber-400/20 text-amber-300'
+      },
+      violet: {
+        bg: 'bg-purple-950/95',
+        border: 'border-purple-400',
+        title: 'text-white',
+        sub: 'text-purple-200',
+        badge: 'bg-purple-400/20 text-purple-300'
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      populateHourDropdowns();
+      checkSundayAutoReset();
+      loadLocalData();
+      renderTimetableGrid();
+      renderEvents();
+      renderTasks();
+      updateSyncStatusUI();
+      initCloudSync();
+    });
+
+    function formatHourLabel(h) {
+      if (h === 0 || h === 24) return '12 AM';
+      if (h === 12) return '12 PM';
+      if (h < 12) return `${h} AM`;
+      return `${h - 12} PM`;
+    }
+
+    function populateHourDropdowns() {
+      const startSelect = document.getElementById('ev-start');
+      const endSelect = document.getElementById('ev-end');
+      startSelect.innerHTML = '';
+      endSelect.innerHTML = '';
+
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        startSelect.innerHTML += `<option value="${h}">${formatHourLabel(h)}</option>`;
+      }
+      for (let h = START_HOUR + 1; h <= END_HOUR; h++) {
+        endSelect.innerHTML += `<option value="${h}">${formatHourLabel(h)}</option>`;
+      }
+      startSelect.value = '11';
+      endSelect.value = '13';
+    }
+
+    function handleStartTimeChange() {
+      const start = parseInt(document.getElementById('ev-start').value);
+      const endSelect = document.getElementById('ev-end');
+      const currentEnd = parseInt(endSelect.value);
+
+      endSelect.innerHTML = '';
+      for (let h = start + 1; h <= END_HOUR; h++) {
+        endSelect.innerHTML += `<option value="${h}">${formatHourLabel(h)}</option>`;
+      }
+      endSelect.value = Math.max(start + 1, currentEnd > start ? currentEnd : start + 1);
+    }
+
+    function switchTab(tab) {
+      const pageTimetable = document.getElementById('page-timetable');
+      const pageTasks = document.getElementById('page-tasks');
+      const btnTimetable = document.getElementById('tab-btn-timetable');
+      const btnTasks = document.getElementById('tab-btn-tasks');
+
+      if (tab === 'timetable') {
+        pageTimetable.classList.remove('hidden');
+        pageTasks.classList.add('hidden');
+        btnTimetable.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5";
+        btnTasks.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white flex items-center gap-1.5";
+      } else {
+        pageTimetable.classList.add('hidden');
+        pageTasks.classList.remove('hidden');
+        btnTasks.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5";
+        btnTimetable.className = "px-4 py-1.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white flex items-center gap-1.5";
+      }
+    }
+
+    function getWeekIdentifier() {
+      const now = new Date();
+      const sunday = new Date(now);
+      sunday.setDate(now.getDate() - now.getDay());
+      return `${sunday.getFullYear()}-${sunday.getMonth() + 1}-${sunday.getDate()}`;
+    }
+
+    function checkSundayAutoReset() {
+      const currentWeekKey = getWeekIdentifier();
+      const lastResetWeek = localStorage.getItem('planner_last_sunday_key');
+
+      if (lastResetWeek && lastResetWeek !== currentWeekKey) {
+        const raw = localStorage.getItem('planner_timetable');
+        if (raw) {
+          const list = JSON.parse(raw);
+          const initialCount = list.length;
+          timetable = list.filter(item => item.recurrence === 'every-week');
+          if (timetable.length !== initialCount) {
+            saveLocalData();
+            document.getElementById('reset-banner').classList.remove('hidden');
+          }
+        }
+      }
+      localStorage.setItem('planner_last_sunday_key', currentWeekKey);
+    }
+
+    function dismissBanner() {
+      document.getElementById('reset-banner').classList.add('hidden');
+    }
+
+    function renderTimetableGrid() {
+      const container = document.getElementById('timetable-body');
+      let html = '';
+
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        html += `
+          <div class="grid grid-cols-[80px_repeat(7,1fr)] h-[68px] border-b border-red-500/50">
+            <!-- Hour Label (Crisp & Clear) -->
+            <div class="grid-time-label flex items-center justify-center text-xs font-black text-slate-300 bg-darkBg">
+              ${formatHourLabel(h)}
+            </div>
+            <!-- 7 Days Slots -->
+            ${DAYS.map(day => `
+              <div class="grid-cell relative cursor-pointer group" onclick="quickFillSlot('${day}', ${h})">
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-red-500/40 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                  + Add
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      html += `<div id="events-overlay" class="absolute inset-0 pointer-events-none"></div>`;
+      container.innerHTML = html;
+    }
+
+    function quickFillSlot(day, hour) {
+      document.getElementById('ev-day').value = day;
+      const startSelect = document.getElementById('ev-start');
+      startSelect.value = hour;
+      handleStartTimeChange();
+      document.getElementById('ev-end').value = Math.min(hour + 1, END_HOUR);
+      scrollToAddEvent();
+      document.getElementById('ev-title').focus();
+    }
+
+    function scrollToAddEvent() {
+      document.getElementById('add-event-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderEvents() {
+      const overlay = document.getElementById('events-overlay');
+      if (!overlay) return;
+      overlay.innerHTML = '';
+
+      timetable.forEach(ev => {
+        const dayIndex = DAYS.indexOf(ev.day);
+        if (dayIndex === -1) return;
+
+        const top = (ev.startHour - START_HOUR) * HOUR_HEIGHT;
+        const height = (ev.endHour - ev.startHour) * HOUR_HEIGHT - 4;
+        const leftPercent = `calc(80px + ${dayIndex} * ((100% - 80px) / 7) + 2px)`;
+        const widthPercent = `calc(((100% - 80px) / 7) - 4px)`;
+
+        const colorStyle = COLOR_CLASSES[ev.color || 'cyan'] || COLOR_CLASSES.cyan;
+
+        const eventEl = document.createElement('div');
+        eventEl.className = `absolute pointer-events-auto rounded-xl p-3 shadow-xl border-2 ${colorStyle.bg} ${colorStyle.border} flex flex-col justify-between overflow-hidden group transition hover:scale-[1.01] hover:z-20`;
+        eventEl.style.top = `${top + 2}px`;
+        eventEl.style.height = `${height}px`;
+        eventEl.style.left = leftPercent;
+        eventEl.style.width = widthPercent;
+
+        eventEl.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-1">
+              <!-- Big, Prominent Title -->
+              <h4 class="font-extrabold text-sm sm:text-base leading-snug tracking-tight ${colorStyle.title}">
+                ${escapeHtml(ev.title)}
+              </h4>
+              <button onclick="deleteEvent('${ev.id}')" title="Delete" class="text-slate-400 hover:text-red-400 text-sm font-bold opacity-0 group-hover:opacity-100 transition p-0.5">
+                ✕
+              </button>
+            </div>
+            ${ev.location ? `<div class="text-xs font-semibold ${colorStyle.sub} mt-1.5 leading-snug">${escapeHtml(ev.location)}</div>` : ''}
+          </div>
+
+          <div class="flex items-center justify-between gap-1 text-[11px] font-bold mt-2 pt-1 border-t border-white/10 ${colorStyle.sub}">
+            <span>${formatHourLabel(ev.startHour)} – ${formatHourLabel(ev.endHour)}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase ${ev.recurrence === 'every-week' ? 'bg-sky-400/20 text-sky-300' : 'bg-amber-400/20 text-amber-300'}">
+              ${ev.recurrence === 'every-week' ? 'Weekly' : 'This Wk'}
+            </span>
+          </div>
+        `;
+
+        overlay.appendChild(eventEl);
+      });
+    }
+
+    function handleAddEvent(e) {
+      e.preventDefault();
+      const title = document.getElementById('ev-title').value.trim();
+      const location = document.getElementById('ev-location').value.trim();
+      const day = document.getElementById('ev-day').value;
+      const startHour = parseInt(document.getElementById('ev-start').value);
+      const endHour = parseInt(document.getElementById('ev-end').value);
+      const color = document.getElementById('ev-color').value;
+      const recurrence = document.querySelector('input[name="ev-recurrence"]:checked').value;
+
+      if (endHour <= startHour) {
+        alert('End time must be later than start time!');
+        return;
+      }
+
+      const newEvent = {
+        id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title,
+        location,
+        day,
+        startHour,
+        endHour,
+        color,
+        recurrence,
+        createdAt: new Date().toISOString()
+      };
+
+      timetable.push(newEvent);
+      saveLocalData();
+      renderEvents();
+      syncToCloud();
+
+      document.getElementById('ev-title').value = '';
+      document.getElementById('ev-location').value = '';
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const original = btn.innerText;
+      btn.innerText = '✓ Added!';
+      setTimeout(() => btn.innerText = original, 1000);
+    }
+
+    function deleteEvent(id) {
+      if (confirm('Delete this event?')) {
+        timetable = timetable.filter(item => item.id !== id);
+        saveLocalData();
+        renderEvents();
+        syncToCloud();
+      }
+    }
+
+    // ========================================================
+    // TASK LIST LOGIC
+    // ========================================================
+    function handleAddTask(e) {
+      e.preventDefault();
+      const title = document.getElementById('task-title').value.trim();
+      const deadline = document.getElementById('task-deadline').value;
+
+      if (!title || !deadline) return;
+
+      const newTask = {
+        id: 'tsk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title,
+        deadline,
+        progressSteps: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      tasks.push(newTask);
+      saveLocalData();
+      renderTasks();
+      syncToCloud();
+
+      document.getElementById('task-title').value = '';
+      document.getElementById('task-deadline').value = '';
+    }
+
+    function adjustTaskProgress(taskId, delta) {
+      const t = tasks.find(item => item.id === taskId);
+      if (!t) return;
+      
+      let nextStep = (t.progressSteps || 0) + delta;
+      if (nextStep < 0) nextStep = 0;
+      if (nextStep > 5) nextStep = 5;
+
+      t.progressSteps = nextStep;
+      saveLocalData();
+      renderTasks();
+      syncToCloud();
+    }
+
+    function setTaskProgressDirect(taskId, step) {
+      const t = tasks.find(item => item.id === taskId);
+      if (!t) return;
+
+      t.progressSteps = step;
+      saveLocalData();
+      renderTasks();
+      syncToCloud();
+    }
+
+    function deleteTask(id) {
+      if (confirm('Delete this task?')) {
+        tasks = tasks.filter(item => item.id !== id);
+        saveLocalData();
+        renderTasks();
+        syncToCloud();
+      }
+    }
+
+    function filterTasks(mode) {
+      taskFilter = mode;
+      ['all', 'pending', 'done'].forEach(f => {
+        const btn = document.getElementById(`filter-btn-${f}`);
+        if (f === mode) {
+          btn.className = "px-3 py-1.5 rounded-lg bg-slate-800 text-white font-bold";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-bold";
+        }
+      });
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('tasks-container');
+      container.innerHTML = '';
+
+      let list = [...tasks];
+      if (taskFilter === 'pending') {
+        list = list.filter(t => (t.progressSteps || 0) < 5);
+      } else if (taskFilter === 'done') {
+        list = list.filter(t => (t.progressSteps || 0) === 5);
+      }
+
+      // Update counters
+      const total = tasks.length;
+      const done = tasks.filter(t => (t.progressSteps || 0) === 5).length;
+      const pending = total - done;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-pending').innerText = pending;
+      document.getElementById('stat-done').innerText = done;
+      document.getElementById('badge-task-count').innerText = pending;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-500 font-bold text-base">
+            No tasks found. Add a task above!
+          </div>
+        `;
+        return;
+      }
+
+      list.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+      list.forEach(t => {
+        const steps = t.progressSteps || 0;
+        const percent = steps * 20;
+        const isCompleted = steps === 5;
+
+        const today = new Date().toISOString().split('T')[0];
+        let deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold font-mono">📅 ${t.deadline}</span>`;
+        if (t.deadline < today && !isCompleted) {
+          deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 font-bold font-mono">⚠️ Overdue: ${t.deadline}</span>`;
+        } else if (t.deadline === today && !isCompleted) {
+          deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold font-mono">⚡ Due Today</span>`;
+        }
+
+        const taskEl = document.createElement('div');
+        taskEl.className = `p-4 sm:p-5 rounded-2xl border-2 transition ${isCompleted ? 'bg-panelBg/60 border-emerald-900/40 opacity-75' : 'bg-panelBg border-slate-800 hover:border-slate-700'}`;
+
+        taskEl.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            <!-- Left: Big Task Title & Deadline -->
+            <div class="space-y-1.5 flex-1">
+              <div class="flex items-center gap-2">
+                ${deadlineBadge}
+                ${isCompleted ? '<span class="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-black">✓ Done</span>' : ''}
+              </div>
+              <h4 class="text-base sm:text-lg font-black tracking-tight ${isCompleted ? 'line-through text-slate-500' : 'text-white'}">
+                ${escapeHtml(t.title)}
+              </h4>
+            </div>
+
+            <!-- Right: 5-Step Progress Bar (+ -) -->
+            <div class="flex items-center gap-3">
+              <!-- Minus Button -->
+              <button onclick="adjustTaskProgress('${t.id}', -1)" ${steps === 0 ? 'disabled' : ''}
+                class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition">
+                −
+              </button>
+
+              <!-- 5 Blocks (Touch Friendly) -->
+              <div class="flex items-center gap-1.5">
+                ${[1, 2, 3, 4, 5].map(stepIndex => {
+                  const filled = stepIndex <= steps;
+                  return `
+                    <div onclick="setTaskProgressDirect('${t.id}', ${stepIndex})"
+                      title="${stepIndex * 20}%"
+                      class="w-7 sm:w-8 h-8 rounded-lg cursor-pointer transition flex items-center justify-center text-xs font-black ${
+                        filled 
+                          ? (isCompleted ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white shadow-md shadow-red-500/50') 
+                          : 'bg-darkBg hover:bg-slate-800 text-slate-500 border border-slate-700/80'
+                      }">
+                      ${filled ? '✓' : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <!-- Plus Button -->
+              <button onclick="adjustTaskProgress('${t.id}', 1)" ${steps === 5 ? 'disabled' : ''}
+                class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-black text-lg flex items-center justify-center transition">
+                +
+              </button>
+
+              <!-- Percentage -->
+              <span class="w-14 text-right font-mono text-sm font-black ${isCompleted ? 'text-emerald-400' : 'text-slate-200'}">
+                ${percent}%
+              </span>
+
+              <!-- Delete -->
+              <button onclick="deleteTask('${t.id}')" title="Delete Task" class="text-slate-500 hover:text-red-400 ml-2 p-1 text-base font-bold">
+                ✕
+              </button>
+            </div>
+
+          </div>
+        `;
+
+        container.appendChild(taskEl);
+      });
+    }
+
+    // ========================================================
+    // STORAGE & GOOGLE APPS SCRIPT
+    // ========================================================
+    function saveLocalData() {
+      localStorage.setItem('planner_timetable', JSON.stringify(timetable));
+      localStorage.setItem('planner_tasks', JSON.stringify(tasks));
+    }
+
+    function loadLocalData() {
+      const tRaw = localStorage.getItem('planner_timetable');
+      const kRaw = localStorage.getItem('planner_tasks');
+
+      if (tRaw) {
+        timetable = JSON.parse(tRaw);
+      } else {
+        timetable = [
+          {
+            id: 'demo_1',
+            title: 'Data Analytics',
+            location: 'KQK 7002 • 2.UG • DK5',
+            day: 'Sun',
+            startHour: 12,
+            endHour: 15,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_2',
+            title: 'Material Selection',
+            location: 'KIG 4052 • OCC1 • DK5',
+            day: 'Mon',
+            startHour: 11,
+            endHour: 13,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_3',
+            title: 'Production & Operation',
+            location: 'KIG 4053 • OCC1 • DK5',
+            day: 'Mon',
+            startHour: 14,
+            endHour: 16,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_4',
+            title: 'KIG 4052',
+            location: 'DK5',
+            day: 'Tue',
+            startHour: 11,
+            endHour: 12,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_5',
+            title: 'KIG 4053',
+            location: 'DK5',
+            day: 'Tue',
+            startHour: 12,
+            endHour: 13,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_6',
+            title: 'Vibration',
+            location: 'KIG 4057 • OCC1 • Green Cube 2',
+            day: 'Thu',
+            startHour: 14,
+            endHour: 16,
+            color: 'cyan',
+            recurrence: 'every-week'
+          },
+          {
+            id: 'demo_7',
+            title: 'Meet Advisor',
+            location: 'Faculty Office',
+            day: 'Wed',
+            startHour: 14,
+            endHour: 15,
+            color: 'emerald',
+            recurrence: 'this-week'
+          }
+        ];
+        saveLocalData();
+      }
+
+      if (kRaw) {
+        tasks = JSON.parse(kRaw);
+      } else {
+        tasks = [
+          {
+            id: 'demo_task_1',
+            title: 'Data Analytics Assignment 1 Report',
+            deadline: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+            progressSteps: 3,
+          },
+          {
+            id: 'demo_task_2',
+            title: 'Prepare presentation slides for advisor',
+            deadline: new Date(Date.now() + 86400000 * 1).toISOString().split('T')[0],
+            progressSteps: 4,
+          },
+          {
+            id: 'demo_task_3',
+            title: 'Vibration Lab manual preparation',
+            deadline: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+            progressSteps: 1,
+          }
+        ];
+        saveLocalData();
+      }
+    }
+
+    async function initCloudSync() {
+      if (!syncUrl) return;
+      setSyncStatus('syncing');
+      try {
+        const res = await fetch(`${syncUrl}?action=getData`);
+        const data = await res.json();
+        if (data && ((data.timetable && data.timetable.length > 0) || (data.tasks && data.tasks.length > 0))) {
+          timetable = data.timetable || [];
+          tasks = data.tasks || [];
+          saveLocalData();
+          renderEvents();
+          renderTasks();
+          setSyncStatus('synced');
+        } else {
+          await syncToCloud();
+        }
+      } catch (err) {
+        syncToCloud();
+      }
+    }
+
+    async function syncToCloud() {
+      if (!syncUrl) return;
+
+      setSyncStatus('syncing');
+      try {
+        await fetch(syncUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'syncAll',
+            timetable: timetable,
+            tasks: tasks
+          })
+        });
+        setSyncStatus('synced');
+      } catch (err) {
+        console.error('Sync error:', err);
+        setSyncStatus('error');
+      }
+    }
+
+    async function loadFromCloud() {
+      if (!syncUrl) {
+        alert('Please save your Google Apps Script URL first!');
+        return;
+      }
+
+      setSyncStatus('syncing');
+      try {
+        const res = await fetch(`${syncUrl}?action=getData`);
+        const data = await res.json();
+        if (data && data.timetable && data.tasks) {
+          timetable = data.timetable;
+          tasks = data.tasks;
+          saveLocalData();
+          renderEvents();
+          renderTasks();
+          setSyncStatus('synced');
+          alert('Successfully loaded data from Google Sheet!');
+          closeSyncModal();
+        }
+      } catch (err) {
+        alert('Could not pull data: ' + err.message);
+        setSyncStatus('error');
+      }
+    }
+
+    function setSyncStatus(state) {
+      const dot = document.getElementById('sync-status-dot');
+      const text = document.getElementById('sync-status-text');
+
+      if (state === 'synced') {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        text.innerText = syncUrl ? 'Cloud Synced' : 'Local Mode';
+      } else if (state === 'syncing') {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        text.innerText = 'Syncing...';
+      } else if (state === 'error') {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-400';
+        text.innerText = 'Sync Error';
+      }
+    }
+
+    function updateSyncStatusUI() {
+      const input = document.getElementById('gas-url-input');
+      input.value = syncUrl;
+      setSyncStatus('synced');
+    }
+
+    function openSyncModal() {
+      document.getElementById('sync-modal').classList.remove('hidden');
+    }
+
+    function closeSyncModal() {
+      document.getElementById('sync-modal').classList.add('hidden');
+    }
+
+    function testAndSaveSyncUrl() {
+      const val = document.getElementById('gas-url-input').value.trim();
+      syncUrl = val;
+      localStorage.setItem('gas_web_app_url', val);
+      updateSyncStatusUI();
+      if (val) syncToCloud();
+      closeSyncModal();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '<br/>');
+    }
+  </script>
+</body>
+</html>
