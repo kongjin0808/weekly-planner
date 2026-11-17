@@ -717,6 +717,23 @@
     // ========================================================
     // TASK LIST LOGIC
     // ========================================================
+    // Helper: Normalize date string to clean YYYY-MM-DD (stripping Google Sheets GMT timezone text)
+    function formatDeadlineString(raw) {
+      if (!raw) return '';
+      const str = String(raw).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+      try {
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return str;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      } catch (e) {
+        return str;
+      }
+    }
+
     function handleAddTask(e) {
       e.preventDefault();
       const title = document.getElementById('task-title').value.trim();
@@ -756,7 +773,7 @@
 
       editingTaskId = id;
       document.getElementById('task-title').value = t.title;
-      document.getElementById('task-deadline').value = t.deadline;
+      document.getElementById('task-deadline').value = formatDeadlineString(t.deadline);
 
       document.getElementById('task-form-title').innerHTML = `<span class="text-amber-400">✏️</span> Edit Task`;
       document.getElementById('task-submit-btn').innerText = '✓ Update';
@@ -883,11 +900,12 @@
         const percent = steps * 20;
         const isCompleted = steps === 5;
 
+        const cleanDeadline = formatDeadlineString(t.deadline);
         const today = new Date().toISOString().split('T')[0];
-        let deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold font-mono">📅 ${t.deadline}</span>`;
-        if (t.deadline < today && !isCompleted) {
-          deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 font-bold font-mono">⚠️ Overdue: ${t.deadline}</span>`;
-        } else if (t.deadline === today && !isCompleted) {
+        let deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold font-mono">📅 ${cleanDeadline}</span>`;
+        if (cleanDeadline < today && !isCompleted) {
+          deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 font-bold font-mono">⚠️ Overdue: ${cleanDeadline}</span>`;
+        } else if (cleanDeadline === today && !isCompleted) {
           deadlineBadge = `<span class="text-xs px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold font-mono">⚡ Due Today</span>`;
         }
 
@@ -1055,6 +1073,9 @@
 
       if (kRaw) {
         tasks = JSON.parse(kRaw);
+        tasks.forEach(t => {
+          t.deadline = formatDeadlineString(t.deadline);
+        });
       } else {
         tasks = [
           {
@@ -1089,6 +1110,9 @@
         if (data && ((data.timetable && data.timetable.length > 0) || (data.tasks && data.tasks.length > 0))) {
           timetable = data.timetable || [];
           tasks = data.tasks || [];
+          tasks.forEach(t => {
+            t.deadline = formatDeadlineString(t.deadline);
+          });
           saveLocalData();
           renderEvents();
           renderTasks();
@@ -1136,6 +1160,9 @@
         if (data && data.timetable && data.tasks) {
           timetable = data.timetable;
           tasks = data.tasks;
+          tasks.forEach(t => {
+            t.deadline = formatDeadlineString(t.deadline);
+          });
           saveLocalData();
           renderEvents();
           renderTasks();
