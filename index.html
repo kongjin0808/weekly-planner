@@ -96,6 +96,12 @@
           </button>
         </div>
 
+        <!-- Export Desktop Image Button -->
+        <button onclick="exportDesktopImage()" title="Save Timetable & Tasks as Desktop Image" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
+          <span>📸</span>
+          <span class="hidden md:inline">Save Image</span>
+        </button>
+
         <!-- Sync Pill -->
         <button onclick="openSyncModal()" title="Google Sheets Sync" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-semibold transition">
           <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -1232,6 +1238,230 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/\n/g, '<br/>');
+    }
+
+    // ========================================================
+    // DESKTOP IMAGE EXPORTER (TIMETABLE + TASK LIST IN 1 PNG)
+    // ========================================================
+    function exportDesktopImage() {
+      const W = 1920;
+      const H = 1080;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // 1. Dark Slate Wallpaper Background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, W, H);
+
+      // Top Title Bar
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 28px Inter, sans-serif';
+      ctx.fillText('📅 WEEKLY PLANNER & TIMETABLE', 50, 48);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 14px Inter, sans-serif';
+      ctx.fillText('7:00 AM – 12:00 AM • Sunday to Saturday', 50, 72);
+
+      // 2. Timetable Grid (Left Panel: 50, 90, width: 1280, height: 940)
+      const tX = 50, tY = 90, tW = 1280, tH = 940;
+      const timeColW = 80;
+      const dayColW = (tW - timeColW) / 7;
+      const headerH = 40;
+      const hourH = (tH - headerH) / 17;
+
+      // Outer border
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(tX, tY, tW, tH);
+
+      // Header row background
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(tX, tY, tW, headerH);
+
+      // Header labels
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '900 13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('TIME', tX + timeColW / 2, tY + 25);
+
+      ctx.fillStyle = '#f87171';
+      ctx.font = '900 16px Inter, sans-serif';
+      DAYS.forEach((d, i) => {
+        ctx.fillText(d, tX + timeColW + i * dayColW + dayColW / 2, tY + 26);
+      });
+
+      // Grid Lines
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.65)';
+      ctx.lineWidth = 1.2;
+
+      // Vertical Day Lines
+      for (let i = 0; i <= 7; i++) {
+        const x = tX + timeColW + i * dayColW;
+        ctx.beginPath();
+        ctx.moveTo(x, tY);
+        ctx.lineTo(x, tY + tH);
+        ctx.stroke();
+      }
+      // Time col separator
+      ctx.beginPath();
+      ctx.moveTo(tX + timeColW, tY);
+      ctx.lineTo(tX + timeColW, tY + tH);
+      ctx.stroke();
+
+      // Horizontal Hour Lines & Labels
+      ctx.textAlign = 'center';
+      for (let h = 0; h < 17; h++) {
+        const y = tY + headerH + h * hourH;
+        ctx.beginPath();
+        ctx.moveTo(tX, y);
+        ctx.lineTo(tX + tW, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '700 12px Inter, sans-serif';
+        ctx.fillText(formatHourLabel(START_HOUR + h), tX + timeColW / 2, y + hourH / 2 + 5);
+      }
+
+      // Event blocks
+      timetable.forEach(ev => {
+        const dayIdx = DAYS.indexOf(ev.day);
+        if (dayIdx === -1) return;
+        if (ev.endHour <= START_HOUR || ev.startHour >= END_HOUR) return;
+
+        const startClamped = Math.max(ev.startHour, START_HOUR);
+        const endClamped = Math.min(ev.endHour, END_HOUR);
+        const bX = tX + timeColW + dayIdx * dayColW + 3;
+        const bY = tY + headerH + (startClamped - START_HOUR) * hourH + 3;
+        const bW = dayColW - 6;
+        const bH = (endClamped - startClamped) * hourH - 6;
+
+        let bg = '#0284c7', border = '#38bdf8';
+        const col = ev.color || 'class';
+        if (col === 'study' || col === 'amber') { bg = '#b45309'; border = '#fbbf24'; }
+        else if (col === 'personal' || col === 'violet') { bg = '#7e22ce'; border = '#c084fc'; }
+        else if (col === 'other' || col === 'emerald') { bg = '#047857'; border = '#34d399'; }
+
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = border;
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, bX, bY, bW, bH, 6, true, true);
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 13px Inter, sans-serif';
+        ctx.fillText(truncateText(ctx, ev.title, bW - 12), bX + 6, bY + 18);
+
+        if (ev.location && bH > 35) {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '500 11px Inter, sans-serif';
+          ctx.fillText(truncateText(ctx, ev.location, bW - 12), bX + 6, bY + 34);
+        }
+
+        if (bH > 55) {
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = '700 10px monospace';
+          ctx.fillText(`${formatHourLabel(ev.startHour)} - ${formatHourLabel(ev.endHour)}`, bX + 6, bY + bH - 6);
+        }
+      });
+
+      // 3. Task List Panel (Right Panel: 1360, 90, width: 510, height: 940)
+      const kX = 1360, kY = 90, kW = 510, kH = 940;
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, kX, kY, kW, kH, 14, true, true);
+
+      // Tasks header
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 20px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('📋 TASKS & DEADLINES', kX + 24, kY + 42);
+
+      const inProgress = tasks.filter(t => (t.progressSteps || 0) < 5);
+      const done = tasks.filter(t => (t.progressSteps || 0) === 5);
+      inProgress.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+      done.sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
+
+      const combined = [...inProgress, ...done];
+      let rowY = kY + 70;
+
+      if (combined.length === 0) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = '600 15px Inter, sans-serif';
+        ctx.fillText('No tasks scheduled.', kX + 24, rowY + 30);
+      }
+
+      combined.slice(0, 10).forEach((t, i) => {
+        const isDone = (t.progressSteps || 0) === 5;
+        const cleanDate = formatDeadlineString(t.deadline);
+        const cardH = 72;
+
+        ctx.fillStyle = isDone ? 'rgba(15, 23, 42, 0.6)' : '#1e293b';
+        ctx.strokeStyle = isDone ? '#065f46' : '#334155';
+        ctx.lineWidth = 1;
+        roundRect(ctx, kX + 20, rowY, kW - 40, cardH, 10, true, true);
+
+        // Date badge
+        ctx.fillStyle = isDone ? '#10b981' : '#f87171';
+        ctx.font = '700 11px monospace';
+        ctx.fillText(`📅 ${cleanDate}${isDone ? '  ✓ DONE' : ''}`, kX + 32, rowY + 22);
+
+        // Task Title
+        ctx.fillStyle = isDone ? '#94a3b8' : '#ffffff';
+        ctx.font = '900 15px Inter, sans-serif';
+        ctx.fillText(truncateText(ctx, t.title, kW - 220), kX + 32, rowY + 48);
+
+        // 5-block progress bar on right
+        const steps = t.progressSteps || 0;
+        const percent = steps * 20;
+        const barStartX = kX + kW - 165;
+        const barY = rowY + 26;
+
+        for (let b = 1; b <= 5; b++) {
+          ctx.fillStyle = b <= steps ? (isDone ? '#10b981' : '#ef4444') : '#090d16';
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1;
+          roundRect(ctx, barStartX + (b - 1) * 18, barY, 14, 18, 3, true, true);
+        }
+
+        ctx.fillStyle = isDone ? '#10b981' : '#e2e8f0';
+        ctx.font = '800 13px monospace';
+        ctx.fillText(`${percent}%`, barStartX + 5 * 18 + 8, barY + 14);
+
+        rowY += cardH + 12;
+      });
+
+      // Trigger download
+      const link = document.createElement('a');
+      link.download = `Weekly-Planner-Desktop-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function truncateText(ctx, text, maxWidth) {
+      if (ctx.measureText(text).width <= maxWidth) return text;
+      let truncated = text;
+      while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+        truncated = truncated.slice(0, -1);
+      }
+      return truncated + '…';
     }
   </script>
 </body>
