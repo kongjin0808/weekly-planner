@@ -76,36 +76,50 @@
   <header id="main-header" class="border-b border-slate-800/80 bg-panelBg/95 backdrop-blur sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       
-      <!-- App Title (Bold & Simple) -->
+      <!-- App Title & Today's Date -->
       <div class="flex items-center space-x-3">
         <span class="text-2xl">📅</span>
-        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
-          Weekly Planner
-        </h1>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase leading-none">
+            Weekly Planner
+          </h1>
+          <div id="header-today-date" class="text-[11px] text-slate-400 font-semibold mt-0.5">
+            Today: Wednesday, 18 Nov 2026
+          </div>
+        </div>
       </div>
 
-      <!-- Navigation Tabs, Widget & Cloud Sync -->
-      <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- Navigation Tabs, Floating Widgets & Cloud Sync -->
+      <div class="flex items-center space-x-1.5 sm:space-x-3">
         <div class="flex bg-darkBg p-1 rounded-xl border border-slate-800">
-          <button id="tab-btn-timetable" onclick="switchTab('timetable')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5">
+          <button id="tab-btn-timetable" onclick="switchTab('timetable')" class="px-3 sm:px-4 py-1.5 rounded-lg font-bold text-sm transition text-white bg-red-600 shadow-sm flex items-center gap-1.5">
             <span>Timetable</span>
           </button>
-          <button id="tab-btn-tasks" onclick="switchTab('tasks')" class="px-4 py-1.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white flex items-center gap-1.5">
+          <button id="tab-btn-tasks" onclick="switchTab('tasks')" class="px-3 sm:px-4 py-1.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white flex items-center gap-1.5">
             <span>Tasks</span>
             <span id="badge-task-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-red-400 font-extrabold">0</span>
           </button>
         </div>
 
-        <!-- Floating Mini Widget Popout Button -->
-        <button onclick="openFloatingWidget()" title="Open Floating Mini Widget for Desktop" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
+        <!-- Floating Widgets (Schedule & Tasks) -->
+        <div class="hidden sm:flex items-center gap-1.5">
+          <button onclick="openPipOrPopup('today')" title="Pin Today's Schedule permanently on screen (Always-on-top PiP)" class="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-200 font-bold transition">
+            <span>📅 Float Day</span>
+          </button>
+          <button onclick="openPipOrPopup('tasks')" title="Pin Tasks Widget permanently on screen (Always-on-top PiP)" class="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-200 font-bold transition">
+            <span>📝 Float Tasks</span>
+          </button>
+        </div>
+
+        <!-- Mini Widget Popout Button (Mobile) -->
+        <button onclick="openFloatingWidget()" title="Open Combined Mini Widget" class="flex sm:hidden items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
           <span>📌</span>
-          <span class="hidden md:inline">Mini Widget</span>
         </button>
 
         <!-- Export Desktop Image Button -->
         <button onclick="exportDesktopImage()" title="Save Timetable & Tasks as Desktop Image" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-bold transition">
           <span>📸</span>
-          <span class="hidden md:inline">Save Image</span>
+          <span class="hidden lg:inline">Save Image</span>
         </button>
 
         <!-- Sync Pill -->
@@ -146,22 +160,43 @@
         </button>
       </div>
 
+      <!-- Week Switcher & Today's Date Banner -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-panelBg border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-600/10 border border-red-500/30 flex items-center justify-center text-lg shrink-0">
+            🗓️
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span id="current-week-label" class="text-base sm:text-lg font-black text-white">This Week (15 Nov – 21 Nov 2026)</span>
+              <span id="current-week-tag" class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-extrabold border border-red-500/30 uppercase">Current Week</span>
+            </div>
+            <p id="today-full-date" class="text-xs text-slate-400 font-medium mt-0.5">
+              Today is <span class="text-slate-200 font-bold">Wednesday, 18 November 2026</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-start md:self-auto">
+          <button onclick="changeWeek(-1)" title="Previous Week" class="px-3 py-1.5 rounded-xl bg-darkBg hover:bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:text-white font-bold transition flex items-center gap-1">
+            <span>‹ Prev Week</span>
+          </button>
+          <button onclick="goToCurrentWeek()" id="btn-snap-today" title="Jump to Today's Week" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs text-white font-bold transition shadow-md shadow-red-900/30">
+            This Week
+          </button>
+          <button onclick="changeWeek(1)" title="Next Week" class="px-3 py-1.5 rounded-xl bg-darkBg hover:bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:text-white font-bold transition flex items-center gap-1">
+            <span>Next Week ›</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Grid Container -->
       <div class="overflow-x-auto rounded-2xl shadow-2xl bg-darkBg grid-container">
         <div class="min-w-[850px] select-none">
           
-          <!-- Days Header (Big & Bold) -->
-          <div class="grid grid-cols-[80px_repeat(7,1fr)] bg-slate-900 text-center">
-            <div class="p-3.5 text-xs font-black text-slate-400 uppercase tracking-wider border-r-2 border-b-2 border-red-500 bg-darkBg flex items-center justify-center">
-              Time
-            </div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Sun</div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Mon</div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Tue</div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Wed</div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Thu</div>
-            <div class="p-3.5 grid-header-col text-lg font-black text-red-400">Fri</div>
-            <div class="p-3.5 grid-header-col border-r-0 text-lg font-black text-red-400">Sat</div>
+          <!-- Days Header (Dynamically Populated with Day & Date) -->
+          <div id="timetable-days-header" class="grid grid-cols-[80px_repeat(7,1fr)] bg-slate-900 text-center">
+            <!-- Dynamically populated by JS: e.g. Sun 15 Nov, Mon 16 Nov, etc. -->
           </div>
 
           <!-- 17 Hours Rows (7 AM to 12 AM) -->
@@ -247,7 +282,7 @@
               <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-700 bg-darkBg cursor-pointer hover:border-red-500 transition">
                 <input type="radio" name="ev-recurrence" value="this-week" class="w-4 h-4 text-red-600 focus:ring-red-500">
                 <div>
-                  <span class="text-sm font-bold text-white block">📅 This Week Only</span>
+                  <span id="recurrence-this-week-label" class="text-sm font-bold text-white block">📅 This Week Only</span>
                   <span class="text-xs text-slate-400">Resets every Sunday</span>
                 </div>
               </label>
@@ -330,15 +365,18 @@
   </main>
 
   <!-- ================= FLOATING QUICK BAR (DOCK TOGGLE) ================= -->
-  <div id="floating-quick-bar" class="fixed bottom-4 right-4 z-40 flex items-center gap-2 bg-panelBg/95 backdrop-blur border border-slate-700/80 shadow-2xl rounded-2xl p-2 px-3 transition hover:border-red-500/50">
-    <button onclick="toggleSideWidget(true)" class="flex items-center gap-2 text-left cursor-pointer">
+  <div id="floating-quick-bar" class="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 bg-panelBg/95 backdrop-blur border border-slate-700/80 shadow-2xl rounded-2xl p-1.5 px-3 transition hover:border-red-500/50">
+    <button onclick="toggleSideWidget(true)" class="flex items-center gap-2 text-left cursor-pointer py-1">
       <span id="quick-bar-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span class="text-xs font-bold text-white">Today & Tasks</span>
+      <span class="text-xs font-bold text-white">Dock</span>
       <span id="quick-bar-task-badge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-600 text-white font-extrabold">0</span>
     </button>
     <div class="h-4 w-px bg-slate-700 mx-1"></div>
-    <button onclick="openFloatingWidget()" title="Pop out floating widget window" class="text-xs px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition flex items-center gap-1">
-      <span>📌 Popout</span>
+    <button onclick="openPipOrPopup('today')" title="Pin Today's Schedule permanently on screen (Always-on-top PiP)" class="text-xs px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition flex items-center gap-1">
+      <span>📅 Float Day</span>
+    </button>
+    <button onclick="openPipOrPopup('tasks')" title="Pin Tasks Widget permanently on screen (Always-on-top PiP)" class="text-xs px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition flex items-center gap-1">
+      <span>📝 Float Tasks</span>
     </button>
   </div>
 
@@ -357,8 +395,11 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="openFloatingWidget()" title="Pop out into small window" class="px-2.5 py-1 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition flex items-center gap-1">
-          <span>📌 Popout</span>
+        <button onclick="openPipOrPopup('today')" title="Float Today" class="px-2 py-1 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition">
+          📅 Day
+        </button>
+        <button onclick="openPipOrPopup('tasks')" title="Float Tasks" class="px-2 py-1 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition">
+          📝 Tasks
         </button>
         <button onclick="toggleSideWidget(false)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold">✕</button>
       </div>
@@ -370,7 +411,17 @@
 
   <!-- ================= STANDALONE FLOATING WIDGET VIEW (?mode=widget) ================= -->
   <div id="standalone-widget-view" class="hidden max-w-md w-full mx-auto min-h-screen p-3 sm:p-4 space-y-4">
-    <!-- Standalone Widget View Content -->
+    <!-- Standalone Combined Widget View Content -->
+  </div>
+
+  <!-- ================= STANDALONE TODAY'S TIMETABLE WIDGET (?widget=today) ================= -->
+  <div id="standalone-today-view" class="hidden max-w-sm w-full mx-auto min-h-screen p-3 sm:p-4 flex items-center justify-center">
+    <!-- Today Card Content -->
+  </div>
+
+  <!-- ================= STANDALONE TASKS WIDGET (?widget=tasks) ================= -->
+  <div id="standalone-tasks-view" class="hidden max-w-sm w-full mx-auto min-h-screen p-3 sm:p-4 flex items-center justify-center">
+    <!-- Tasks Card Content -->
   </div>
 
   <!-- ================= GOOGLE SHEETS SYNC MODAL ================= -->
@@ -482,30 +533,36 @@
         badge: 'bg-emerald-400/20 text-emerald-300'
       }
     };
+    const COLOR_MAP = COLOR_CLASSES;
 
-    
-    const COLOR_MAP = COLOR_CLASSES;    
-const urlParams = new URLSearchParams(window.location.search);
-    const isWidgetMode = urlParams.get('mode') === 'widget';
+    const urlParams = new URLSearchParams(window.location.search);
+    const widgetParam = (urlParams.get('widget') || urlParams.get('mode') || '').toLowerCase();
+    const isTodayWidget = widgetParam === 'today';
+    const isTasksWidget = widgetParam === 'tasks';
+    const isCombinedWidget = widgetParam === 'widget';
+    const isWidgetMode = isTodayWidget || isTasksWidget || isCombinedWidget;
+
+    const activePipWindows = {};
 
     window.addEventListener('DOMContentLoaded', () => {
       populateHourDropdowns();
       checkSundayAutoReset();
       loadLocalData();
+      updateTodayDateDisplay();
 
-      if (isWidgetMode) {
-        const mh = document.getElementById('main-header');
-        const mc = document.getElementById('main-content');
-        const fq = document.getElementById('floating-quick-bar');
-        const sw = document.getElementById('standalone-widget-view');
-        if (mh) mh.classList.add('hidden');
-        if (mc) mc.classList.add('hidden');
-        if (fq) fq.classList.add('hidden');
-        if (sw) sw.classList.remove('hidden');
-        document.body.className = "bg-darkBg text-slate-100 min-h-screen p-3 sm:p-4 font-sans antialiased selection:bg-red-500/30 selection:text-red-200";
+      if (isTodayWidget) {
+        hideMainAndShow('standalone-today-view');
+        renderTodayWidgetStandalone();
+      } else if (isTasksWidget) {
+        hideMainAndShow('standalone-tasks-view');
+        renderTasksWidgetStandalone();
+      } else if (isCombinedWidget) {
+        hideMainAndShow('standalone-widget-view');
         initWidgetView('standalone-widget-view');
       } else {
+        updateWeekUI();
         renderTimetableGrid();
+        renderTimetableHeader();
         renderEvents();
         renderTasks();
         initWidgetView('drawer-widget-body');
@@ -515,6 +572,170 @@ const urlParams = new URLSearchParams(window.location.search);
       initCloudSync();
       startAutoSync();
     });
+
+    function hideMainAndShow(viewId) {
+      const mh = document.getElementById('main-header');
+      const mc = document.getElementById('main-content');
+      const fq = document.getElementById('floating-quick-bar');
+      if (mh) mh.classList.add('hidden');
+      if (mc) mc.classList.add('hidden');
+      if (fq) fq.classList.add('hidden');
+      const target = document.getElementById(viewId);
+      if (target) target.classList.remove('hidden');
+      document.body.className = "bg-[#090d16] text-slate-100 min-h-screen p-3 sm:p-4 font-sans antialiased selection:bg-red-500/30 selection:text-red-200 flex items-center justify-center";
+    }
+
+    // ========================================================
+    // DATE & WEEK NAVIGATION SYSTEM
+    // ========================================================
+    let currentWeekOffset = 0; // 0 = Current Week, 1 = Next Week, -1 = Prev Week
+
+    function updateTodayDateDisplay() {
+      const now = new Date();
+      const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const monthsFull = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const formatted = `${daysFull[now.getDay()]}, ${now.getDate()} ${monthsFull[now.getMonth()]} ${now.getFullYear()}`;
+
+      const el1 = document.getElementById('header-today-date');
+      if (el1) el1.innerText = `Today: ${formatted}`;
+      const el2 = document.getElementById('today-full-date');
+      if (el2) el2.innerHTML = `Today is <span class="text-white font-bold">${formatted}</span>`;
+    }
+
+    function getSundayOfOffset(offset = currentWeekOffset) {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+      sunday.setDate(sunday.getDate() + (offset * 7));
+      return sunday;
+    }
+
+    function getWeekKey(offset = currentWeekOffset) {
+      const sun = getSundayOfOffset(offset);
+      const y = sun.getFullYear();
+      const m = String(sun.getMonth() + 1).padStart(2, '0');
+      const d = String(sun.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getWeekDateRange(offset = currentWeekOffset) {
+      const sun = getSundayOfOffset(offset);
+      const sat = new Date(sun);
+      sat.setDate(sun.getDate() + 6);
+
+      const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startStr = `${sun.getDate()} ${monthsShort[sun.getMonth()]}`;
+      const endStr = `${sat.getDate()} ${monthsShort[sat.getMonth()]} ${sat.getFullYear()}`;
+      return `${startStr} – ${endStr}`;
+    }
+
+    function getWeekDays(offset = currentWeekOffset) {
+      const sun = getSundayOfOffset(offset);
+      const days = [];
+      const now = new Date();
+      const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sun);
+        d.setDate(sun.getDate() + i);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dayNum = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${dayNum}`;
+
+        days.push({
+          dayName: DAYS[i],
+          dateNum: d.getDate(),
+          monthShort: monthsShort[d.getMonth()],
+          dateStr: dateStr,
+          isToday: dateStr === todayDateStr
+        });
+      }
+      return days;
+    }
+
+    function changeWeek(delta) {
+      currentWeekOffset += delta;
+      updateWeekUI();
+    }
+
+    function goToCurrentWeek() {
+      currentWeekOffset = 0;
+      updateWeekUI();
+    }
+
+    function updateWeekUI() {
+      const labelEl = document.getElementById('current-week-label');
+      const tagEl = document.getElementById('current-week-tag');
+      const rangeStr = getWeekDateRange(currentWeekOffset);
+      const recThisWeekLabel = document.getElementById('recurrence-this-week-label');
+
+      if (labelEl) {
+        if (currentWeekOffset === 0) {
+          labelEl.innerText = `This Week (${rangeStr})`;
+          if (tagEl) {
+            tagEl.innerText = 'Current Week';
+            tagEl.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-extrabold border border-red-500/30 uppercase';
+          }
+          if (recThisWeekLabel) recThisWeekLabel.innerText = '📅 This Week Only';
+        } else if (currentWeekOffset === 1) {
+          labelEl.innerText = `Next Week (${rangeStr})`;
+          if (tagEl) {
+            tagEl.innerText = 'Next Week';
+            tagEl.className = 'text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 font-extrabold border border-sky-500/30 uppercase';
+          }
+          if (recThisWeekLabel) recThisWeekLabel.innerText = `📅 Next Week Only (${rangeStr})`;
+        } else if (currentWeekOffset > 1) {
+          labelEl.innerText = `Week of ${rangeStr}`;
+          if (tagEl) {
+            tagEl.innerText = `+${currentWeekOffset} Wks Ahead`;
+            tagEl.className = 'text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-extrabold border border-purple-500/30 uppercase';
+          }
+          if (recThisWeekLabel) recThisWeekLabel.innerText = `📅 For Selected Week`;
+        } else {
+          labelEl.innerText = `Past Week (${rangeStr})`;
+          if (tagEl) {
+            tagEl.innerText = 'Past Week';
+            tagEl.className = 'text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-extrabold uppercase';
+          }
+          if (recThisWeekLabel) recThisWeekLabel.innerText = `📅 For Selected Week`;
+        }
+      }
+
+      renderTimetableHeader();
+      renderEvents();
+    }
+
+    function renderTimetableHeader() {
+      const container = document.getElementById('timetable-days-header');
+      if (!container) return;
+
+      const days = getWeekDays(currentWeekOffset);
+      let html = `
+        <div class="p-3 text-xs font-black text-slate-400 uppercase tracking-wider border-r-2 border-b-2 border-red-500 bg-darkBg flex items-center justify-center">
+          Time
+        </div>
+      `;
+
+      days.forEach((d, idx) => {
+        const isLast = idx === 6;
+        const isToday = d.isToday;
+        html += `
+          <div class="p-2 sm:p-3 grid-header-col ${isLast ? 'border-r-0' : ''} ${isToday ? 'bg-red-950/40' : ''}">
+            <div class="text-base sm:text-lg font-black ${isToday ? 'text-red-400 font-black' : 'text-slate-200'}">
+              ${d.dayName}
+            </div>
+            <div class="text-[11px] sm:text-xs font-bold ${isToday ? 'text-red-300' : 'text-slate-400'}">
+              ${d.dateNum} ${d.monthShort}
+            </div>
+            ${isToday ? '<span class="inline-block mt-0.5 text-[9px] px-1.5 py-0.2 rounded-full bg-red-600 text-white font-extrabold tracking-wider uppercase">Today</span>' : ''}
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
 
     function formatHourLabel(h) {
       if (h === 0 || h === 24) return '12 AM';
@@ -646,7 +867,26 @@ const urlParams = new URLSearchParams(window.location.search);
       if (!overlay) return;
       overlay.innerHTML = '';
 
-      timetable.forEach(ev => {
+      const currentWeekKey = getWeekKey(currentWeekOffset);
+      const filteredEvents = timetable.filter(ev => {
+        // Weekly recurring classes appear across all weeks
+        if (!ev.recurrence || ev.recurrence === 'every-week') return true;
+        // One-off events with explicit weekKey
+        if (ev.weekKey) {
+          return ev.weekKey === currentWeekKey;
+        }
+        // One-off events stored as 'week_YYYY-MM-DD'
+        if (ev.recurrence.startsWith('week_')) {
+          return ev.recurrence.replace('week_', '') === currentWeekKey;
+        }
+        // Legacy 'this-week' without weekKey is shown on week offset 0
+        if (ev.recurrence === 'this-week') {
+          return currentWeekOffset === 0;
+        }
+        return true;
+      });
+
+      filteredEvents.forEach(ev => {
         const dayIndex = DAYS.indexOf(ev.day);
         if (dayIndex === -1) return;
 
@@ -663,6 +903,11 @@ const urlParams = new URLSearchParams(window.location.search);
         eventEl.style.height = `${height}px`;
         eventEl.style.left = leftPercent;
         eventEl.style.width = widthPercent;
+
+        let recBadgeText = 'Weekly';
+        if (ev.recurrence !== 'every-week') {
+          recBadgeText = currentWeekOffset === 0 ? 'This Wk' : (currentWeekOffset === 1 ? 'Next Wk' : 'One-off');
+        }
 
         eventEl.innerHTML = `
           <div>
@@ -686,7 +931,7 @@ const urlParams = new URLSearchParams(window.location.search);
           <div class="flex items-center justify-between gap-1 text-[11px] font-bold mt-2 pt-1 border-t border-white/10 ${colorStyle.sub}">
             <span>${formatHourLabel(ev.startHour)} – ${formatHourLabel(ev.endHour)}</span>
             <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase ${ev.recurrence === 'every-week' ? 'bg-sky-400/20 text-sky-300' : 'bg-amber-400/20 text-amber-300'}">
-              ${ev.recurrence === 'every-week' ? 'Weekly' : 'This Wk'}
+              ${recBadgeText}
             </span>
           </div>
         `;
@@ -717,7 +962,8 @@ const urlParams = new URLSearchParams(window.location.search);
       document.getElementById('ev-color').value = col;
 
       const rec = ev.recurrence || 'every-week';
-      const rad = document.querySelector(`input[name="ev-recurrence"][value="${rec}"]`);
+      const radValue = rec === 'every-week' ? 'every-week' : 'this-week';
+      const rad = document.querySelector(`input[name="ev-recurrence"][value="${radValue}"]`);
       if (rad) rad.checked = true;
 
       document.getElementById('event-form-title').innerHTML = `<span class="text-amber-400">✏️</span> Edit Schedule Event`;
@@ -745,11 +991,20 @@ const urlParams = new URLSearchParams(window.location.search);
       const startHour = parseInt(document.getElementById('ev-start').value);
       const endHour = parseInt(document.getElementById('ev-end').value);
       const color = document.getElementById('ev-color').value;
-      const recurrence = document.querySelector('input[name="ev-recurrence"]:checked').value;
+      const recurrenceChoice = document.querySelector('input[name="ev-recurrence"]:checked').value;
 
       if (endHour <= startHour) {
         alert('End time must be later than start time!');
         return;
+      }
+
+      const currentWeekKey = getWeekKey(currentWeekOffset);
+      let finalRecurrence = recurrenceChoice;
+      let finalWeekKey = null;
+
+      if (recurrenceChoice === 'this-week') {
+        finalWeekKey = currentWeekKey;
+        finalRecurrence = currentWeekOffset === 0 ? 'this-week' : ('week_' + currentWeekKey);
       }
 
       if (editingEventId) {
@@ -761,7 +1016,9 @@ const urlParams = new URLSearchParams(window.location.search);
           ev.startHour = startHour;
           ev.endHour = endHour;
           ev.color = color;
-          ev.recurrence = recurrence;
+          ev.recurrence = finalRecurrence;
+          if (finalWeekKey) ev.weekKey = finalWeekKey;
+          else if (recurrenceChoice === 'every-week') delete ev.weekKey;
           ev.updatedAt = new Date().toISOString();
         }
         cancelEditEvent();
@@ -774,7 +1031,8 @@ const urlParams = new URLSearchParams(window.location.search);
           startHour,
           endHour,
           color,
-          recurrence,
+          recurrence: finalRecurrence,
+          ...(finalWeekKey ? { weekKey: finalWeekKey } : {}),
           createdAt: new Date().toISOString()
         };
         timetable.push(newEvent);
@@ -783,8 +1041,7 @@ const urlParams = new URLSearchParams(window.location.search);
       }
 
       saveLocalData();
-      renderEvents();
-      renderWidgetSchedule();
+      renderAllViews();
       syncToCloud();
 
       const btn = e.target.querySelector('button[type="submit"]');
@@ -797,10 +1054,10 @@ const urlParams = new URLSearchParams(window.location.search);
       if (confirm('Delete this event?')) {
         timetable = timetable.filter(item => item.id !== id);
         saveLocalData();
-        renderEvents();
-        renderWidgetSchedule();
+        renderAllViews();
         syncToCloud();
       }
+    }
     }
 
     // ========================================================
@@ -852,8 +1109,7 @@ const urlParams = new URLSearchParams(window.location.search);
       }
 
       saveLocalData();
-      renderTasks();
-      renderWidgetTasks();
+      renderAllViews();
       syncToCloud();
     }
 
@@ -892,8 +1148,7 @@ const urlParams = new URLSearchParams(window.location.search);
 
       t.progressSteps = nextStep;
       saveLocalData();
-      renderTasks();
-      renderWidgetTasks();
+      renderAllViews();
       syncToCloud();
     }
 
@@ -903,8 +1158,7 @@ const urlParams = new URLSearchParams(window.location.search);
 
       t.progressSteps = step;
       saveLocalData();
-      renderTasks();
-      renderWidgetTasks();
+      renderAllViews();
       syncToCloud();
     }
 
@@ -913,8 +1167,7 @@ const urlParams = new URLSearchParams(window.location.search);
         tasks = tasks.filter(item => item.id !== id);
         if (editingTaskId === id) cancelEditTask();
         saveLocalData();
-        renderTasks();
-        renderWidgetTasks();
+        renderAllViews();
         syncToCloud();
       }
     }
@@ -1214,11 +1467,7 @@ const urlParams = new URLSearchParams(window.location.search);
             t.deadline = formatDeadlineString(t.deadline);
           });
           saveLocalData();
-          renderEvents();
-          renderTasks();
-          renderWidgetSchedule();
-          renderWidgetTasks();
-          updateQuickBarBadges();
+          renderAllViews();
           setSyncStatus('synced');
         } else {
           await syncToCloud();
@@ -1287,11 +1536,7 @@ const urlParams = new URLSearchParams(window.location.search);
             timetable = incomingTimetable;
             tasks = incomingTasks;
             saveLocalData();
-            renderEvents();
-            renderTasks();
-            renderWidgetSchedule();
-            renderWidgetTasks();
-            updateQuickBarBadges();
+            renderAllViews();
             flashSyncIndicator('Auto-Synced (Just now)');
           } else {
             setSyncStatus('synced');
@@ -1356,11 +1601,7 @@ const urlParams = new URLSearchParams(window.location.search);
             t.deadline = formatDeadlineString(t.deadline);
           });
           saveLocalData();
-          renderEvents();
-          renderTasks();
-          renderWidgetSchedule();
-          renderWidgetTasks();
-          updateQuickBarBadges();
+          renderAllViews();
           setSyncStatus('synced');
           alert('Successfully loaded data from Google Sheet!');
           closeSyncModal();
@@ -2037,8 +2278,10 @@ const urlParams = new URLSearchParams(window.location.search);
     }
 
     function handleWidgetQuickAddTask(e) {
-      e.preventDefault();
-      const input = document.getElementById('widget-quick-task-title');
+      if (e && e.preventDefault) e.preventDefault();
+      const form = e ? (e.target || e.currentTarget) : null;
+      let input = form ? form.querySelector('input') : null;
+      if (!input) input = document.getElementById('widget-quick-task-title');
       if (!input) return;
       const title = input.value.trim();
       if (!title) return;
@@ -2055,9 +2298,390 @@ const urlParams = new URLSearchParams(window.location.search);
       tasks.push(newTask);
       input.value = '';
       saveLocalData();
-      renderTasks();
-      renderWidgetTasks();
+      renderAllViews();
       syncToCloud();
+    }
+
+    // ========================================================
+    // STANDALONE VIEWS & ALWAYS-ON-TOP PICTURE-IN-PICTURE (PiP)
+    // ========================================================
+    function renderTodayWidgetStandalone() {
+      const container = document.getElementById('standalone-today-view');
+      if (container) {
+        container.innerHTML = getTodayCardHtml();
+      }
+    }
+
+    function renderTasksWidgetStandalone() {
+      const container = document.getElementById('standalone-tasks-view');
+      if (container) {
+        container.innerHTML = getTasksCardHtml();
+      }
+    }
+
+    function getTodayCardHtml() {
+      const now = new Date();
+      const todayIdx = now.getDay();
+      const dayKey = DAYS[todayIdx];
+      const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dateFormatted = `${daysFull[todayIdx]}, ${now.getDate()} ${monthsShort[now.getMonth()]}`;
+
+      const currentWeekKey = getWeekKey(0);
+      const dayEvents = timetable.filter(ev => {
+        if (ev.day !== dayKey) return false;
+        if (!ev.recurrence || ev.recurrence === 'every-week') return true;
+        if (ev.weekKey) return ev.weekKey === currentWeekKey;
+        if (ev.recurrence.startsWith('week_')) return ev.recurrence.replace('week_', '') === currentWeekKey;
+        return true;
+      });
+      dayEvents.sort((a, b) => a.startHour - b.startHour);
+
+      const count = dayEvents.length;
+      let heroText = `${count} ${count === 1 ? 'Event' : 'Events'}`;
+      let heroSub = count > 0 
+        ? `${dayEvents[0].startHour > now.getHours() ? 'Next at ' + formatHourLabel(dayEvents[0].startHour) : 'Scheduled for today'}`
+        : 'All clear today 🎉';
+
+      let itemsHtml = '';
+      if (dayEvents.length === 0) {
+        itemsHtml = `
+          <div class="text-center py-8 px-4 bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-1">
+            <span class="text-2xl block mb-1">☀️</span>
+            <div class="font-bold text-slate-200">No scheduled events today</div>
+            <div class="text-[11px] text-slate-500">Free time, rest, or self-study</div>
+          </div>
+        `;
+      } else {
+        dayEvents.forEach(ev => {
+          let col = ev.color || 'class';
+          let circleBg = 'bg-sky-400 text-slate-950';
+          let catLabel = 'Class';
+          if (col === 'study' || col === 'amber') {
+            circleBg = 'bg-amber-400 text-slate-950';
+            catLabel = 'Study';
+          } else if (col === 'personal' || col === 'violet') {
+            circleBg = 'bg-purple-400 text-white';
+            catLabel = 'Personal';
+          } else if (col === 'other' || col === 'emerald') {
+            circleBg = 'bg-emerald-400 text-slate-950';
+            catLabel = 'Other';
+          }
+
+          const duration = ev.endHour - ev.startHour;
+          const durationStr = `${duration}h`;
+          const timeStart = formatHourLabel(ev.startHour).toLowerCase().replace(' ', '');
+
+          itemsHtml += `
+            <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition">
+              <!-- Circular pill badge on left (matching user's phone screenshot) -->
+              <div class="w-11 h-11 rounded-full ${circleBg} flex flex-col items-center justify-center shrink-0 shadow-md font-black">
+                <span class="text-[11px] leading-tight font-black">${timeStart}</span>
+                <span class="text-[9px] opacity-80 leading-none">${durationStr}</span>
+              </div>
+
+              <!-- Main Title & Location -->
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-black text-white truncate leading-snug">
+                  ${escapeHtml(ev.title)}
+                </div>
+                <div class="text-[11px] font-semibold text-slate-400 truncate mt-0.5">
+                  ${ev.location ? '📍 ' + escapeHtml(ev.location) : catLabel}
+                </div>
+              </div>
+
+              <!-- Time span pill -->
+              <div class="text-right shrink-0">
+                <span class="text-[10px] font-mono font-bold text-slate-300 px-2 py-0.5 rounded-md bg-darkBg border border-slate-700/60 block">
+                  ${formatHourLabel(ev.startHour)}
+                </span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      return `
+        <div class="w-full max-w-sm bg-[#12141c] border border-slate-800 rounded-[28px] p-5 shadow-2xl space-y-4 font-sans select-none">
+          <!-- Top Row: Card Title & Controls -->
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div class="flex items-center gap-1.5">
+              <span>📅</span>
+              <span class="uppercase tracking-wider font-extrabold text-[11px] text-slate-300">Today's Schedule</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="syncFromCloudSilent(true)" title="Sync Now" class="hover:text-white p-1 text-xs transition">
+                🔄
+              </button>
+              <a href="./" target="_blank" title="Open Full App" class="text-xs hover:text-white p-1 transition">
+                ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Hero Section (Bold Count like 3h 19m) -->
+          <div>
+            <div class="text-3xl font-black text-white tracking-tight leading-none">${heroText}</div>
+            <div class="text-xs font-semibold text-red-400 mt-1.5 flex items-center gap-1.5">
+              <span>${dateFormatted}</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span class="text-slate-400">${heroSub}</span>
+            </div>
+          </div>
+
+          <!-- Event Cards List -->
+          <div class="space-y-2 max-h-[320px] overflow-y-auto pr-0.5">
+            ${itemsHtml}
+          </div>
+
+          <!-- Bottom Footer -->
+          <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Auto-Sync</span>
+            </span>
+            <a href="./" target="_blank" class="text-red-400 hover:text-red-300 font-bold transition flex items-center gap-1">
+              <span>Full Timetable</span>
+              <span>›</span>
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function getTasksCardHtml() {
+      const inProgressList = tasks.filter(t => (t.progressSteps || 0) < 5);
+      const doneList = tasks.filter(t => (t.progressSteps || 0) === 5);
+      inProgressList.sort((a, b) => new Date(formatDeadlineString(a.deadline)) - new Date(formatDeadlineString(b.deadline)));
+
+      const totalPending = inProgressList.length;
+      const heroText = totalPending > 0 ? `${totalPending} In Progress` : 'All Done! 🎉';
+      const heroSub = totalPending > 0 ? `${doneList.length} completed` : 'Everything is completed';
+
+      let itemsHtml = '';
+      if (inProgressList.length === 0) {
+        itemsHtml = `
+          <div class="text-center py-8 px-4 bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 text-xs space-y-1">
+            <span class="text-2xl block mb-1">🎉</span>
+            <div class="font-bold text-slate-200">No pending tasks!</div>
+            <div class="text-[11px] text-slate-500">Add a task below to get started</div>
+          </div>
+        `;
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        inProgressList.forEach(t => {
+          const steps = t.progressSteps || 0;
+          const percent = steps * 20;
+          const cleanDeadline = formatDeadlineString(t.deadline);
+
+          let circleBg = 'bg-slate-800 text-slate-300 border border-slate-700';
+          if (percent > 0 && percent < 100) {
+            circleBg = 'bg-red-500 text-white shadow-md shadow-red-500/40';
+          } else if (percent === 100) {
+            circleBg = 'bg-emerald-400 text-slate-950 font-black';
+          }
+
+          let dateColor = 'text-slate-400';
+          let datePrefix = '📅 ';
+          if (cleanDeadline < today) {
+            dateColor = 'text-red-400 font-bold';
+            datePrefix = '⚠️ ';
+          } else if (cleanDeadline === today) {
+            dateColor = 'text-amber-300 font-bold';
+            datePrefix = '⚡ Due Today';
+          }
+
+          itemsHtml += `
+            <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition group">
+              <!-- Circular Progress Pill (Click to advance +20%) -->
+              <button type="button" onclick="adjustTaskProgress('${t.id}', 1)" title="Click to add +20%"
+                class="w-11 h-11 rounded-full ${circleBg} flex flex-col items-center justify-center shrink-0 shadow-md transition hover:scale-105 active:scale-95 font-black">
+                <span class="text-[11px] leading-tight font-black">${percent}%</span>
+                <span class="text-[8px] opacity-80 leading-none mt-0.5">${steps}/5</span>
+              </button>
+
+              <!-- Main Title & Deadline -->
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-black text-white truncate leading-snug">
+                  ${escapeHtml(t.title)}
+                </div>
+                <div class="text-[11px] ${dateColor} truncate mt-0.5 font-mono">
+                  ${datePrefix}${cleanDeadline}
+                </div>
+              </div>
+
+              <!-- Plus / Minus controls -->
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="adjustTaskProgress('${t.id}', -1)" title="Decrease 20%"
+                  class="w-6 h-6 rounded-lg bg-darkBg hover:bg-slate-700 border border-slate-700 text-slate-200 font-extrabold flex items-center justify-center text-xs transition">
+                  −
+                </button>
+                <button type="button" onclick="adjustTaskProgress('${t.id}', 1)" title="Increase 20%"
+                  class="w-6 h-6 rounded-lg bg-darkBg hover:bg-slate-700 border border-slate-700 text-slate-200 font-extrabold flex items-center justify-center text-xs transition">
+                  +
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      return `
+        <div class="w-full max-w-sm bg-[#12141c] border border-slate-800 rounded-[28px] p-5 shadow-2xl space-y-4 font-sans select-none">
+          <!-- Top Row: Card Title & Controls -->
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <div class="flex items-center gap-1.5">
+              <span>📝</span>
+              <span class="uppercase tracking-wider font-extrabold text-[11px] text-slate-300">Tasks</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="syncFromCloudSilent(true)" title="Sync Now" class="hover:text-white p-1 text-xs transition">
+                🔄
+              </button>
+              <a href="./" target="_blank" title="Open Full App" class="text-xs hover:text-white p-1 transition">
+                ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Hero Section (Bold Count) -->
+          <div>
+            <div class="text-3xl font-black text-white tracking-tight leading-none">${heroText}</div>
+            <div class="text-xs font-semibold text-emerald-400 mt-1.5 flex items-center gap-1.5">
+              <span>${heroSub}</span>
+            </div>
+          </div>
+
+          <!-- Tasks List -->
+          <div class="space-y-2 max-h-[280px] overflow-y-auto pr-0.5">
+            ${itemsHtml}
+          </div>
+
+          <!-- Inline Quick Add Task Form -->
+          <form onsubmit="handleWidgetQuickAddTask(event)" class="flex gap-1.5 pt-2 border-t border-slate-800/80">
+            <input type="text" id="widget-quick-task-title" placeholder="+ Quick task... (Enter)" required
+              class="flex-1 bg-darkBg border border-slate-700 focus:border-red-500 rounded-xl px-3 py-1.5 text-xs font-medium text-white placeholder-slate-500 focus:outline-none transition">
+            <button type="submit" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition shrink-0 shadow-md shadow-red-900/30">
+              Add
+            </button>
+          </form>
+
+          <!-- Bottom Footer -->
+          <div class="pt-1 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Auto-Sync</span>
+            </span>
+            <a href="./" target="_blank" class="text-red-400 hover:text-red-300 font-bold transition flex items-center gap-1">
+              <span>Full Task List</span>
+              <span>›</span>
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAllViews() {
+      renderEvents();
+      renderTasks();
+      renderWidgetSchedule();
+      renderWidgetTasks();
+      updateQuickBarBadges();
+
+      const todayContainer = document.getElementById('standalone-today-view');
+      if (todayContainer && !todayContainer.classList.contains('hidden')) {
+        renderTodayWidgetStandalone();
+      }
+
+      const tasksContainer = document.getElementById('standalone-tasks-view');
+      if (tasksContainer && !tasksContainer.classList.contains('hidden')) {
+        renderTasksWidgetStandalone();
+      }
+
+      // Update active Document Picture-in-Picture windows
+      if (activePipWindows['today'] && !activePipWindows['today'].closed) {
+        const el = activePipWindows['today'].document.getElementById('pip-content');
+        if (el) el.innerHTML = getTodayCardHtml();
+      }
+      if (activePipWindows['tasks'] && !activePipWindows['tasks'].closed) {
+        const el = activePipWindows['tasks'].document.getElementById('pip-content');
+        if (el) el.innerHTML = getTasksCardHtml();
+      }
+    }
+
+    async function openPipOrPopup(type) {
+      if ('documentPictureInPicture' in window) {
+        try {
+          if (activePipWindows[type] && !activePipWindows[type].closed) {
+            activePipWindows[type].focus();
+            return;
+          }
+
+          const pip = await window.documentPictureInPicture.requestWindow({
+            width: 360,
+            height: 520
+          });
+
+          // Forward event handlers
+          pip.window.adjustTaskProgress = (id, delta) => adjustTaskProgress(id, delta);
+          pip.window.setTaskProgressDirect = (id, step) => setTaskProgressDirect(id, step);
+          pip.window.deleteTask = (id) => deleteTask(id);
+          pip.window.syncFromCloudSilent = (force) => syncFromCloudSilent(force);
+          pip.window.handleWidgetQuickAddTask = (e) => handleWidgetQuickAddTask(e);
+
+          // Copy stylesheets
+          [...document.styleSheets].forEach(styleSheet => {
+            try {
+              if (styleSheet.href) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = styleSheet.href;
+                pip.document.head.appendChild(link);
+              } else if (styleSheet.cssRules) {
+                const style = document.createElement('style');
+                [...styleSheet.cssRules].forEach(rule => style.appendChild(document.createTextNode(rule.cssText)));
+                pip.document.head.appendChild(style);
+              }
+            } catch (e) {
+              console.warn('PiP CSS copy warning:', e);
+            }
+          });
+
+          const meta = document.createElement('meta');
+          meta.name = 'viewport';
+          meta.content = 'width=device-width, initial-scale=1.0';
+          pip.document.head.appendChild(meta);
+
+          pip.document.title = type === 'today' ? "Today's Schedule (Always on Top)" : "Tasks & Deadlines (Always on Top)";
+          pip.document.body.className = "bg-[#090d16] text-slate-100 p-2 font-sans antialiased selection:bg-red-500/30 selection:text-red-200 flex items-center justify-center min-h-screen overflow-x-hidden";
+
+          const container = pip.document.createElement('div');
+          container.id = 'pip-content';
+          container.className = "w-full flex justify-center";
+          container.innerHTML = type === 'today' ? getTodayCardHtml() : getTasksCardHtml();
+          pip.document.body.appendChild(container);
+
+          activePipWindows[type] = pip;
+
+          pip.addEventListener('pagehide', () => {
+            delete activePipWindows[type];
+          });
+          return;
+        } catch (err) {
+          console.warn('Document PiP request failed, falling back to popup:', err);
+        }
+      }
+
+      openStandalonePopup(type);
+    }
+
+    function openStandalonePopup(type) {
+      const w = 360;
+      const h = 540;
+      const left = Math.max(0, (window.screen.availWidth || window.innerWidth) - w - 25);
+      const top = type === 'today' ? 40 : 600;
+      const url = window.location.origin + window.location.pathname + '?widget=' + type;
+      window.open(url, 'Widget_' + type, `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`);
     }
   </script>
 </body>
